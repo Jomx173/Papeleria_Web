@@ -8,8 +8,7 @@ import {
   FaTags,
   FaExchangeAlt,
   FaChartBar,
-  FaCog,
-  FaBars,
+FaCog,
   FaBell,
   FaChevronLeft,
   FaChevronRight,
@@ -152,9 +151,9 @@ function DashboardLayout() {
           <button
             className="topbar-menu-btn"
             onClick={() => setSidebarOpen((open) => !open)}
-            aria-label="Abrir menú"
+            aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
           >
-            <FaBars />
+            {sidebarOpen ? <FaChevronLeft /> : <FaChevronRight />}
           </button>
 
           {showTopbarSearch && (

@@ -229,6 +229,12 @@ button:focus-visible {
   margin-right: 0;
 }
 
+.product-table:not(.table-responsive .product-table) {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
 /* ---- Stock bajo ---- */
 .stock-bajo {
   background: #fef2f2;
@@ -770,6 +776,7 @@ button:focus-visible {
 
 /* ---- Main / Topbar ---- */
 .dashboard-main {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -790,21 +797,23 @@ button:focus-visible {
 
 .topbar-menu-btn {
   display: none;
-  background: #f1f5f9;
+  background: #fff;
   color: #334155;
   width: 40px;
   height: 40px;
   padding: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
   font-size: 1.1rem;
-  box-shadow: none;
 }
 
 .topbar-menu-btn:hover {
-  background: #e2e8f0;
-  box-shadow: none;
+  background: #f1f5f9;
+  color: #0f2447;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
 .topbar-search {
@@ -974,7 +983,7 @@ button:focus-visible {
 
 /* ---- Fondo decorativo de página (blobs) ---- */
 .page-blobs {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   overflow: hidden;
@@ -1043,19 +1052,36 @@ button:focus-visible {
 }
 
 @media (max-width: 575.98px) {
+  .page-blobs .blob-blue,
+  .page-blobs .blob-green,
+  .page-blobs .blob-yellow,
+  .page-blobs .blob-teal {
+    display: none;
+  }
+
   .page-blobs .blob-violet {
-    width: 220px;
-    height: 220px;
+    width: 150px;
+    height: 150px;
+    top: -55px;
+    left: -60px;
+    background: rgba(79, 70, 229, 0.12);
   }
 
   .page-blobs .blob-rose {
-    width: 190px;
-    height: 190px;
+    width: 130px;
+    height: 130px;
+    top: 210px;
+    left: auto;
+    right: -45px;
+    background: rgba(236, 72, 153, 0.1);
   }
 
   .page-blobs .blob-orange {
-    width: 170px;
-    height: 170px;
+    width: 120px;
+    height: 120px;
+    bottom: -50px;
+    left: -45px;
+    background: rgba(234, 88, 12, 0.1);
   }
 }
 
@@ -1088,6 +1114,10 @@ button:focus-visible {
   }
 
   .sidebar-collapse-btn {
+    display: none;
+  }
+
+  .dashboard-topbar .dropdown {
     display: none;
   }
 
