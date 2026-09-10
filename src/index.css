@@ -1336,6 +1336,37 @@ button:focus-visible {
   color: #b91c1c;
 }
 
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.btn-edit {
+  background: #eef2ff;
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+.btn-edit:hover {
+  background: #e0e7ff;
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+.btn-delete {
+  box-shadow: none;
+}
+
 /* ================= Reportes: tarjetas + títulos ================= */
 .stat-card {
   display: flex;

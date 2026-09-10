@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar } from "react-icons/fa";
+import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar, FaEdit, FaTrash } from "react-icons/fa";
 import Modal from "../components/Modal";
-import { getMovements, createMovement, getProducts } from "../services/api";
+import { getMovements, createMovement, updateMovement, deleteMovement, getProducts } from "../services/api";
 
 const emptyForm = { producto_id: "", tipo: "entrada", cantidad: "", motivo: "" };
 
@@ -13,6 +13,7 @@ function Movimientos() {
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -33,8 +34,18 @@ function Movimientos() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openForm = async () => {
-    setForm(emptyForm);
+  const openForm = async (movement = null) => {
+    setEditing(movement);
+    setForm(
+      movement
+        ? {
+            producto_id: movement.producto_id,
+            tipo: movement.tipo,
+            cantidad: movement.cantidad,
+            motivo: movement.motivo || "",
+          }
+        : emptyForm
+    );
     setFormError("");
     setShowForm(true);
     try {
@@ -49,18 +60,35 @@ function Movimientos() {
     setSaving(true);
     setFormError("");
     try {
-      await createMovement({
+      const payload = {
         producto_id: Number(form.producto_id),
         tipo: form.tipo,
         cantidad: Number(form.cantidad),
         motivo: form.motivo.trim() || null,
-      });
+      };
+      if (editing) {
+        await updateMovement(editing.id, payload);
+      } else {
+        await createMovement(payload);
+      }
       setShowForm(false);
       load();
     } catch (err) {
       setFormError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (movement) => {
+    if (!window.confirm(`¿Eliminar el movimiento de "${movement.producto}"? El stock se ajustará automáticamente.`)) {
+      return;
+    }
+    try {
+      await deleteMovement(movement.id);
+      load();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -109,12 +137,13 @@ function Movimientos() {
               <th>Tipo</th>
               <th>Cantidad</th>
               <th>Motivo</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {movements.length === 0 ? (
               <tr>
-                <td colSpan="5" className="empty-row">
+                <td colSpan="6" className="empty-row">
                   No hay movimientos registrados
                 </td>
               </tr>
@@ -133,6 +162,24 @@ function Movimientos() {
                     {movement.cantidad}
                   </td>
                   <td>{movement.motivo || "—"}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        className="btn-edit"
+                        onClick={() => openForm(movement)}
+                        title="Editar movimiento"
+                      >
+                        <FaEdit /> Editar
+                      </button>
+                      <button
+                        className="btn-danger btn-delete"
+                        onClick={() => handleDelete(movement)}
+                        title="Eliminar movimiento"
+                      >
+                        <FaTrash /> Eliminar
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
@@ -143,7 +190,7 @@ function Movimientos() {
       {showForm && (
         <Modal onClose={() => setShowForm(false)} size="lg">
           <form className="product-form movement-form" onSubmit={handleSubmit}>
-            <h3>Registrar movimiento</h3>
+            <h3>{editing ? "Editar movimiento" : "Registrar movimiento"}</h3>
 
             {formError && <div className="error-banner">{formError}</div>}
 
@@ -193,7 +240,7 @@ function Movimientos() {
 
             <div className="form-actions">
               <button type="submit" disabled={saving}>
-                {saving ? "Guardando..." : "Guardar movimiento"}
+                {saving ? "Guardando..." : editing ? "Guardar cambios" : "Guardar movimiento"}
               </button>
               <button
                 type="button"

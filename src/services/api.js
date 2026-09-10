@@ -55,6 +55,12 @@ export const getMovements = (productoId) =>
 export const createMovement = (data) =>
   request("/movements", { method: "POST", body: JSON.stringify(data) });
 
+export const updateMovement = (id, data) =>
+  request(`/movements/${id}`, { method: "PUT", body: JSON.stringify(data) });
+
+export const deleteMovement = (id) =>
+  request(`/movements/${id}`, { method: "DELETE" });
+
 export const getMovementsSummary = (desde, hasta) => {
   const params = new URLSearchParams();
   if (desde) params.set("desde", desde);
