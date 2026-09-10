@@ -24,9 +24,6 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import {
   getSummary,
   getProducts,
@@ -37,9 +34,21 @@ import {
 } from "../services/api";
 import { getCategoryColor } from "../utils/categoryColors";
 import { getCssVar } from "../theme.js";
+import { exportProductosExcel, exportProductosPdf } from "../utils/exportProductos";
 
 const fmtMoney = (value) =>
   `$${Number(value || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const tipoLabel = (tipo) => (tipo === "entrada" ? "Entrada" : tipo === "salida" ? "Salida" : "Ajuste");
+
+const movimientoCantidad = (movement) => {
+  if (movement.tipo === "entrada") return `+${movement.cantidad}`;
+  if (movement.tipo === "salida") return `-${movement.cantidad}`;
+  return movement.cantidad > 0 ? `+${movement.cantidad}` : `${movement.cantidad}`;
+};
+
+const movimientoEsBaja = (movement) =>
+  movement.tipo === "salida" || (movement.tipo === "ajuste" && movement.cantidad < 0);
 
 function Reportes() {
   const [summary, setSummary] = useState(null);
@@ -88,30 +97,12 @@ function Reportes() {
     }));
   const recentMovements = movements.slice(0, 10);
 
-  const exportRows = products.map((p) => ({
-    Nombre: p.nombre,
-    Cantidad: Number(p.cantidad),
-    Precio: Number(p.precio).toFixed(2),
-    Categoria: p.categoria || "Sin categoría",
-  }));
-
   const exportPdf = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Reporte de productos - Papelería", 14, 18);
-    autoTable(doc, {
-      startY: 26,
-      head: [["Nombre", "Cantidad", "Precio", "Categoría"]],
-      body: exportRows.map((r) => [r.Nombre, r.Cantidad, r.Precio, r.Categoria]),
-    });
-    doc.save(`productos_${new Date().toISOString().slice(0, 10)}.pdf`);
+    exportProductosPdf(products, "productos", "Reporte de productos - Papelería");
   };
 
   const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(exportRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Productos");
-    XLSX.writeFile(wb, `productos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    exportProductosExcel(products, "productos");
   };
 
   const stats = [
@@ -296,12 +287,11 @@ function Reportes() {
                         <td className="product-name">{m.producto}</td>
                         <td>
                           <span className={`mov-badge ${m.tipo}`}>
-                            {m.tipo === "entrada" ? "Entrada" : "Salida"}
+                            {tipoLabel(m.tipo)}
                           </span>
                         </td>
-                        <td className={m.tipo === "entrada" ? "" : "cantidad-baja"}>
-                          {m.tipo === "entrada" ? "+" : "-"}
-                          {m.cantidad}
+                        <td className={movimientoEsBaja(m) ? "cantidad-baja" : ""}>
+                          {movimientoCantidad(m)}
                         </td>
                       </tr>
                     ))

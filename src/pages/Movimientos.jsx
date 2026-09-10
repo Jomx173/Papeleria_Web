@@ -9,6 +9,17 @@ function formatDate(iso) {
   return new Date(iso).toLocaleString("es-HN", { dateStyle: "short", timeStyle: "short" });
 }
 
+const tipoLabel = (tipo) => (tipo === "entrada" ? "Entrada" : tipo === "salida" ? "Salida" : "Ajuste");
+
+const movimientoCantidad = (movement) => {
+  if (movement.tipo === "entrada") return `+${movement.cantidad}`;
+  if (movement.tipo === "salida") return `−${movement.cantidad}`;
+  return movement.cantidad > 0 ? `+${movement.cantidad}` : `${movement.cantidad}`;
+};
+
+const movimientoEsBaja = (movement) =>
+  movement.tipo === "salida" || (movement.tipo === "ajuste" && movement.cantidad < 0);
+
 function Movimientos() {
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
@@ -87,7 +98,7 @@ function Movimientos() {
           </span>
           <div>
             <h1>Movimientos</h1>
-            <p>Historial de entradas y salidas de productos.</p>
+            <p>Historial de entradas, salidas y ajustes de stock.</p>
           </div>
         </div>
         <div className="page-banner-art" aria-hidden="true">
@@ -142,12 +153,11 @@ function Movimientos() {
                   <td className="product-name">{movement.producto || "Producto eliminado"}</td>
                   <td>
                     <span className={`mov-badge ${movement.tipo}`}>
-                      {movement.tipo === "entrada" ? "Entrada" : "Salida"}
+                      {tipoLabel(movement.tipo)}
                     </span>
                   </td>
-                  <td className={movement.tipo === "salida" ? "cantidad-baja" : ""}>
-                    {movement.tipo === "entrada" ? "+" : "−"}
-                    {movement.cantidad}
+                  <td className={movimientoEsBaja(movement) ? "cantidad-baja" : ""}>
+                    {movimientoCantidad(movement)}
                   </td>
                   <td>{movement.stock_anterior ?? "—"}</td>
                   <td>{movement.stock_actual ?? "—"}</td>
@@ -273,16 +283,13 @@ function Movimientos() {
                 <span className="detail-label">Tipo</span>
                 <span className="detail-value">
                   <span className={`mov-badge ${viewing.tipo}`}>
-                    {viewing.tipo === "entrada" ? "Entrada" : "Salida"}
+                    {tipoLabel(viewing.tipo)}
                   </span>
                 </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Cantidad</span>
-                <span className="detail-value">
-                  {viewing.tipo === "entrada" ? "+" : "−"}
-                  {viewing.cantidad}
-                </span>
+                <span className="detail-value">{movimientoCantidad(viewing)}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Stock anterior</span>

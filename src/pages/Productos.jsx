@@ -12,6 +12,11 @@ import {
   FaPlus,
   FaCut,
   FaStickyNote,
+  FaBoxes,
+  FaFileExcel,
+  FaPrint,
+  FaEllipsisH,
+  FaChevronDown,
 } from "react-icons/fa";
 import ProductList from "../components/ProductList";
 import ProductForm from "../components/ProductForm";
@@ -19,9 +24,17 @@ import ProductBulk from "../components/ProductBulk";
 import CategoryFilter from "../components/CategoryFilter";
 import StockAlert from "../components/StockAlert";
 import Modal from "../components/Modal";
-import { getProducts, createProduct, updateProduct, deleteProduct } from "../services/api";
+import { getProducts, createProduct, updateProduct, deleteProduct, adjustProductsStock } from "../services/api";
+import { exportProductosExcel, printProductos } from "../utils/exportProductos";
 
 const PAGE_SIZE = 10;
+
+const ADJUST_DESCRIPTIONS = {
+  aumentar: "Suma esta cantidad al stock actual de cada producto seleccionado.",
+  disminuir: "Resta esta cantidad al stock actual de cada producto seleccionado.",
+  establecer:
+    "Fija el stock de cada producto seleccionado a la cantidad exacta indicada (ideal para conteo físico).",
+};
 
 function Productos() {
   const [products, setProducts] = useState([]);
@@ -32,11 +45,28 @@ function Productos() {
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAdjust, setShowAdjust] = useState(false);
+  const [adjustModo, setAdjustModo] = useState("aumentar");
+  const [adjustCantidad, setAdjustCantidad] = useState("");
+  const [adjustError, setAdjustError] = useState("");
+  const [adjusting, setAdjusting] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [stockStamp, setStockStamp] = useState(0);
   const [toast, setToast] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const toastTimer = useRef(null);
+  const moreRef = useRef(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!showMore) return undefined;
+    function handleClick(e) {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setShowMore(false);
+    }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [showMore]);
 
   const showToast = (message) => {
     setToast(message);
@@ -132,12 +162,70 @@ function Productos() {
     setShowDeleteConfirm(false);
     try {
       await Promise.all(selectedIds.map((id) => deleteProduct(id)));
+      const n = selectedIds.length;
       setSelectedIds([]);
       loadProducts();
       setPage(1);
+      setStockStamp((v) => v + 1);
+      showToast(`${n} producto${n === 1 ? "" : "s"} eliminado${n === 1 ? "" : "s"} correctamente.`);
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const openAdjust = () => {
+    setAdjustError("");
+    setAdjustCantidad("");
+    setAdjustModo("aumentar");
+    setShowAdjust(true);
+  };
+
+  const handleApplyAdjust = async () => {
+    const cantidad = Number(adjustCantidad);
+    if (adjustCantidad === "" || !Number.isInteger(cantidad) || cantidad < 0) {
+      setAdjustError("Ingresa una cantidad válida (número entero no negativo).");
+      return;
+    }
+    if (adjustModo !== "establecer" && cantidad < 1) {
+      setAdjustError("La cantidad debe ser al menos 1.");
+      return;
+    }
+    if (adjustModo === "disminuir") {
+      const negativo = selectedProducts.some((p) => Number(p.cantidad) - cantidad < 0);
+      if (negativo) {
+        setAdjustError("No se puede disminuir esa cantidad porque el stock resultaría negativo.");
+        return;
+      }
+    }
+    setAdjusting(true);
+    setAdjustError("");
+    try {
+      await adjustProductsStock({
+        items: selectedIds.map((id) => ({ producto_id: id, tipo: adjustModo, cantidad })),
+        motivo: "Ajuste de inventario",
+      });
+      setShowAdjust(false);
+      setSelectedIds([]);
+      setAdjustCantidad("");
+      setAdjustModo("aumentar");
+      loadProducts();
+      setStockStamp((v) => v + 1);
+      showToast("Ajuste de stock aplicado correctamente.");
+    } catch (err) {
+      setAdjustError(err.message);
+    } finally {
+      setAdjusting(false);
+    }
+  };
+
+  const handleExportSelected = () => {
+    setShowMore(false);
+    exportProductosExcel(selectedProducts, "productos_seleccionados");
+  };
+
+  const handlePrintSelected = () => {
+    setShowMore(false);
+    printProductos(selectedProducts, "Productos seleccionados");
   };
 
   const handleClearFilters = () => {
@@ -163,6 +251,8 @@ function Productos() {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
+
+  const selectedProducts = products.filter((product) => selectedIds.includes(product.id));
 
   const allOnPageSelected =
     paginatedProducts.length > 0 &&
@@ -197,7 +287,7 @@ function Productos() {
         {error && <div className="error-banner">{error}</div>}
         {toast && <div className="success-banner">{toast}</div>}
 
-        <StockAlert />
+        <StockAlert key={stockStamp} />
 
       <div className="toolbar">
         <div className="toolbar-actions">
@@ -246,12 +336,38 @@ function Productos() {
 
       {selectedIds.length > 0 && (
         <div className="selection-bar">
-          <span>
-            {selectedIds.length} producto(s) seleccionado(s)
+          <span className="selection-count">
+            {selectedIds.length} producto{selectedIds.length === 1 ? "" : "s"} seleccionado
+            {selectedIds.length === 1 ? "" : "s"}
           </span>
-          <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
-            <FaTrash /> Eliminar seleccionados
-          </button>
+          <div className="selection-actions">
+            <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+              <FaTrash /> Eliminar seleccionados
+            </button>
+            <button onClick={openAdjust}>
+              <FaBoxes /> Ajustar stock
+            </button>
+            <div className="menu-wrap" ref={moreRef}>
+              <button
+                className="btn-secondary"
+                aria-haspopup="menu"
+                aria-expanded={showMore}
+                onClick={() => setShowMore((v) => !v)}
+              >
+                <FaEllipsisH /> Más acciones <FaChevronDown className="caret-icon" />
+              </button>
+              {showMore && (
+                <div className="dropdown-menu" role="menu">
+                  <button type="button" role="menuitem" onClick={handleExportSelected}>
+                    <FaFileExcel /> Exportar seleccionados
+                  </button>
+                  <button type="button" role="menuitem" onClick={handlePrintSelected}>
+                    <FaPrint /> Imprimir seleccionados
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -260,7 +376,8 @@ function Productos() {
           <div className="confirm-box">
             <h3>Eliminar productos</h3>
             <p>
-              ¿Deseas eliminar {selectedIds.length} producto(s) seleccionado(s)?
+              ¿Deseas eliminar los {selectedIds.length} producto{selectedIds.length === 1 ? "" : "s"} seleccionado
+              {selectedIds.length === 1 ? "" : "s"}?
             </p>
             <div className="form-actions">
               <button type="button" className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
@@ -268,6 +385,65 @@ function Productos() {
               </button>
               <button type="button" className="btn-danger" onClick={handleDeleteSelected}>
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showAdjust && (
+        <Modal onClose={() => setShowAdjust(false)}>
+          <div className="adjust-box">
+            <h3>Ajustar inventario</h3>
+            <p className="adjust-hint">
+              Has seleccionado {selectedIds.length} producto{selectedIds.length === 1 ? "" : "s"}.
+            </p>
+            {adjustError && <div className="error-banner">{adjustError}</div>}
+            <div className="form-group">
+              <span className="adjust-field-label">Tipo de ajuste</span>
+              <div className="adjust-type-toggle">
+                <button
+                  type="button"
+                  className={adjustModo === "aumentar" ? "active" : ""}
+                  onClick={() => setAdjustModo("aumentar")}
+                >
+                  Aumentar
+                </button>
+                <button
+                  type="button"
+                  className={`disminuir ${adjustModo === "disminuir" ? "active" : ""}`}
+                  onClick={() => setAdjustModo("disminuir")}
+                >
+                  Disminuir
+                </button>
+                <button
+                  type="button"
+                  className={adjustModo === "establecer" ? "active" : ""}
+                  onClick={() => setAdjustModo("establecer")}
+                >
+                  Establecer cantidad
+                </button>
+              </div>
+              <p className="adjust-desc">{ADJUST_DESCRIPTIONS[adjustModo]}</p>
+            </div>
+            <label>
+              Cantidad
+              <input
+                type="number"
+                name="ajusteCantidad"
+                min="0"
+                step="1"
+                value={adjustCantidad}
+                onChange={(e) => setAdjustCantidad(e.target.value)}
+                placeholder={adjustModo === "establecer" ? "Ej. 22" : "Ej. 5"}
+              />
+            </label>
+            <div className="form-actions">
+              <button type="button" onClick={handleApplyAdjust} disabled={adjusting}>
+                {adjusting ? "Aplicando..." : "Aplicar ajuste"}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShowAdjust(false)}>
+                Cancelar
               </button>
             </div>
           </div>

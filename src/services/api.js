@@ -32,6 +32,9 @@ export const updateProduct = (id, data) =>
 export const deleteProduct = (id) =>
   request(`/products/${id}`, { method: "DELETE" });
 
+export const adjustProductsStock = (payload) =>
+  request("/products/adjust-stock", { method: "POST", body: JSON.stringify(payload) });
+
 export const getLowStockProducts = () => request("/products/alertas");
 
 export const getCategories = () => request("/categories");
