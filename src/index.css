@@ -44,9 +44,11 @@ h1 {
 }
 
 .container {
-  max-width: 1000px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  box-sizing: border-box;
 }
 
 /* ---- Toolbar: filtro + botones, alineados a la izquierda ---- */
@@ -1356,7 +1358,7 @@ button:focus-visible {
     width: 150px;
     height: 150px;
     top: -55px;
-    left: -60px;
+    left: 1.5rem;
     background: rgba(79, 70, 229, 0.12);
   }
 
@@ -1373,7 +1375,7 @@ button:focus-visible {
     width: 120px;
     height: 120px;
     bottom: -50px;
-    left: -45px;
+    left: 1.5rem;
     background: rgba(234, 88, 12, 0.1);
   }
 }
@@ -2209,7 +2211,7 @@ input[type="checkbox"] {
 
 /* ================= Reportes: gráficas y exportación ================= */
 .reportes-container {
-  max-width: 1200px;
+  max-width: none;
 }
 
 .chart-box {
@@ -2271,7 +2273,7 @@ input[type="checkbox"] {
 
 /* ================= Configuración ================= */
 .config-container {
-  max-width: 1200px;
+  max-width: none;
 }
 
 .config-tabs {
