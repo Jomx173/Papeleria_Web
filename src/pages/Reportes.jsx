@@ -148,7 +148,7 @@ function Reportes() {
       <div className="container reportes-container">
         {error && <div className="error-banner">{error}</div>}
 
-      <div className="row g-3 mb-4">
+      <div className="row g-3 mb-4 reportes-stats">
         {stats.map((stat) => (
           <div className="col-6 col-lg-3" key={stat.label}>
             <div className="stat-card">
