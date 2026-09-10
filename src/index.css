@@ -395,6 +395,48 @@ button:focus-visible {
   box-shadow: none;
 }
 
+/* ---- Modal de categoría: compacto ---- */
+.category-form {
+  grid-template-columns: 1fr;
+  gap: 0.95rem;
+}
+
+.category-form .modal-title {
+  margin: 0 0 0.25rem;
+  font-size: clamp(1.35rem, 1.75rem, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.category-form label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.3rem;
+}
+
+.category-form input {
+  font-size: 0.875rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.category-form input::placeholder {
+  color: #94a3b8;
+}
+
+.category-form .form-actions {
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.category-form .form-actions button {
+  font-size: 0.875rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 8px;
+}
+
 /* ---- Fila menú (tres puntos) ---- */
 .row-menu-wrap {
   position: relative;

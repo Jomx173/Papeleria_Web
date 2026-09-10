@@ -214,7 +214,7 @@ function Categorias() {
 
       {showForm && (
         <Modal onClose={handleCancel}>
-          <form className="product-form" onSubmit={handleSubmit}>
+          <form className="product-form category-form" onSubmit={handleSubmit}>
             <h2 className="modal-title">
               {editing ? "Editar categoría" : "Nueva categoría"}
             </h2>
