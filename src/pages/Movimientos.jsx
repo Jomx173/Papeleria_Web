@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar, FaEye, FaTrash } from "react-icons/fa";
 import Modal from "../components/Modal";
-import { getMovements, createMovement, updateMovement, deleteMovement, getProducts } from "../services/api";
+import { getMovements, createMovement, deleteMovement, getProducts } from "../services/api";
 
 const emptyForm = { producto_id: "", tipo: "entrada", cantidad: "", motivo: "" };
 
@@ -13,7 +13,7 @@ function Movimientos() {
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -34,18 +34,8 @@ function Movimientos() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openForm = async (movement = null) => {
-    setEditing(movement);
-    setForm(
-      movement
-        ? {
-            producto_id: movement.producto_id,
-            tipo: movement.tipo,
-            cantidad: movement.cantidad,
-            motivo: movement.motivo || "",
-          }
-        : emptyForm
-    );
+  const openForm = async () => {
+    setForm(emptyForm);
     setFormError("");
     setShowForm(true);
     try {
@@ -66,11 +56,7 @@ function Movimientos() {
         cantidad: Number(form.cantidad),
         motivo: form.motivo.trim() || null,
       };
-      if (editing) {
-        await updateMovement(editing.id, payload);
-      } else {
-        await createMovement(payload);
-      }
+      await createMovement(payload);
       setShowForm(false);
       load();
     } catch (err) {
@@ -81,7 +67,7 @@ function Movimientos() {
   };
 
   const handleDelete = async (movement) => {
-    if (!window.confirm(`¿Eliminar el movimiento de "${movement.producto}"? El stock se ajustará automáticamente.`)) {
+    if (!window.confirm(`¿Deseas eliminar el movimiento de "${movement.producto}"? El stock se ajustará automáticamente.`)) {
       return;
     }
     try {
@@ -136,6 +122,8 @@ function Movimientos() {
               <th>Producto</th>
               <th>Tipo</th>
               <th>Cantidad</th>
+              <th>Stock anterior</th>
+              <th>Stock actual</th>
               <th>Motivo</th>
               <th>Acciones</th>
             </tr>
@@ -143,7 +131,7 @@ function Movimientos() {
           <tbody>
             {movements.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-row">
+                <td colSpan="8" className="empty-row">
                   No hay movimientos registrados
                 </td>
               </tr>
@@ -161,15 +149,17 @@ function Movimientos() {
                     {movement.tipo === "entrada" ? "+" : "−"}
                     {movement.cantidad}
                   </td>
+                  <td>{movement.stock_anterior ?? "—"}</td>
+                  <td>{movement.stock_actual ?? "—"}</td>
                   <td>{movement.motivo || "—"}</td>
                   <td>
                     <div className="row-actions">
                       <button
                         className="btn-edit"
-                        onClick={() => openForm(movement)}
-                        title="Editar movimiento"
+                        onClick={() => setViewing(movement)}
+                        title="Ver detalles del movimiento"
                       >
-                        <FaEdit /> Editar
+                        <FaEye /> Ver
                       </button>
                       <button
                         className="btn-danger btn-delete"
@@ -190,7 +180,7 @@ function Movimientos() {
       {showForm && (
         <Modal onClose={() => setShowForm(false)} size="lg">
           <form className="product-form movement-form" onSubmit={handleSubmit}>
-            <h3>{editing ? "Editar movimiento" : "Registrar movimiento"}</h3>
+            <h3>Registrar movimiento</h3>
 
             {formError && <div className="error-banner">{formError}</div>}
 
@@ -208,10 +198,22 @@ function Movimientos() {
 
             <label>
               Tipo
-              <select name="tipo" value={form.tipo} onChange={handleChange} required>
-                <option value="entrada">Entrada</option>
-                <option value="salida">Salida</option>
-              </select>
+              <div className="mov-type-toggle">
+                <button
+                  type="button"
+                  className={form.tipo === "entrada" ? "seg-btn seg-btn-entrada active" : "seg-btn seg-btn-entrada"}
+                  onClick={() => setForm((prev) => ({ ...prev, tipo: "entrada" }))}
+                >
+                  Entrada
+                </button>
+                <button
+                  type="button"
+                  className={form.tipo === "salida" ? "seg-btn seg-btn-salida active" : "seg-btn seg-btn-salida"}
+                  onClick={() => setForm((prev) => ({ ...prev, tipo: "salida" }))}
+                >
+                  Salida
+                </button>
+              </div>
             </label>
 
             <label>
@@ -240,7 +242,7 @@ function Movimientos() {
 
             <div className="form-actions">
               <button type="submit" disabled={saving}>
-                {saving ? "Guardando..." : editing ? "Guardar cambios" : "Guardar movimiento"}
+                {saving ? "Guardando..." : "Registrar movimiento"}
               </button>
               <button
                 type="button"
@@ -251,6 +253,56 @@ function Movimientos() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {viewing && (
+        <Modal onClose={() => setViewing(null)} size="md">
+          <div className="detail-view">
+            <h3>Detalles del movimiento</h3>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">Fecha</span>
+                <span className="detail-value">{formatDate(viewing.created_at)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Producto</span>
+                <span className="detail-value">{viewing.producto || "Producto eliminado"}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Tipo</span>
+                <span className="detail-value">
+                  <span className={`mov-badge ${viewing.tipo}`}>
+                    {viewing.tipo === "entrada" ? "Entrada" : "Salida"}
+                  </span>
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Cantidad</span>
+                <span className="detail-value">
+                  {viewing.tipo === "entrada" ? "+" : "−"}
+                  {viewing.cantidad}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Stock anterior</span>
+                <span className="detail-value">{viewing.stock_anterior ?? "—"}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Stock actual</span>
+                <span className="detail-value">{viewing.stock_actual ?? "—"}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Motivo</span>
+                <span className="detail-value">{viewing.motivo || "—"}</span>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setViewing(null)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
       </div>

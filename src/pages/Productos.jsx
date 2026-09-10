@@ -31,6 +31,7 @@ function Productos() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const toastTimer = useRef(null);
@@ -128,7 +129,7 @@ function Productos() {
   };
 
   const handleDeleteSelected = async () => {
-    if (!window.confirm(`¿Eliminar ${selectedIds.length} producto(s) seleccionado(s)?`)) return;
+    setShowDeleteConfirm(false);
     try {
       await Promise.all(selectedIds.map((id) => deleteProduct(id)));
       setSelectedIds([]);
@@ -248,13 +249,29 @@ function Productos() {
           <span>
             {selectedIds.length} producto(s) seleccionado(s)
           </span>
-          <button className="btn-danger" onClick={handleDeleteSelected}>
+          <button className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
             <FaTrash /> Eliminar seleccionados
           </button>
-          <button className="btn-secondary" onClick={() => setSelectedIds([])}>
-            Limpiar selección
-          </button>
         </div>
+      )}
+
+      {showDeleteConfirm && (
+        <Modal onClose={() => setShowDeleteConfirm(false)}>
+          <div className="confirm-box">
+            <h3>Eliminar productos</h3>
+            <p>
+              ¿Deseas eliminar {selectedIds.length} producto(s) seleccionado(s)?
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
+                Cancelar
+              </button>
+              <button type="button" className="btn-danger" onClick={handleDeleteSelected}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showForm && (
