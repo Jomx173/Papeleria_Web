@@ -1239,6 +1239,10 @@ button:focus-visible {
   font-size: 1.05rem;
 }
 
+.product-thumb-sticker {
+  transform: rotate(8deg);
+}
+
 .page-link-btn {
   display: inline-flex;
   align-items: center;

@@ -11,6 +11,9 @@ import {
   FaChartBar,
   FaStar,
   FaPaperclip,
+  FaStickyNote,
+  FaRulerCombined,
+  FaCut,
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -30,6 +33,30 @@ const formatCurrency = (value) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+const STICKER_CATEGORIA = {
+  Cuadernos: { icon: FaBook, color: "#f59e0b" },
+  Escritura: { icon: FaPencilAlt, color: "#ec4899" },
+  Arte: { icon: FaStar, color: "#f59e0b" },
+  Oficina: { icon: FaPaperclip, color: "#3b82f6" },
+  Escolar: { icon: FaRulerCombined, color: "#8b5cf6" },
+  Accesorios: { icon: FaCut, color: "#f43f5e" },
+  Papel: { icon: FaStickyNote, color: "#f59e0b" },
+  Varios: { icon: FaBook, color: "#6366f1" },
+};
+const STICKER_DEFAULT = { icon: FaBook, color: "#6366f1" };
+
+function ProductSticker({ categoria }) {
+  const { icon: Icon, color } = STICKER_CATEGORIA[categoria] || STICKER_DEFAULT;
+  return (
+    <span
+      className="product-thumb product-thumb-sticker"
+      style={{ background: `${color}22`, color }}
+    >
+      <Icon />
+    </span>
+  );
+}
 
 function Inicio() {
   const [summary, setSummary] = useState(null);
@@ -164,9 +191,7 @@ function Inicio() {
                         recentProducts.map((p) => (
                           <tr key={p.id}>
                             <td>
-                              <span className="product-thumb">
-                                <FaBoxOpen />
-                              </span>
+                              <ProductSticker categoria={p.categoria} />
                             </td>
                             <td className="product-name">{p.nombre}</td>
                             <td>{p.cantidad}</td>
