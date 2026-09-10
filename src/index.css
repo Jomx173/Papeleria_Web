@@ -354,9 +354,13 @@ button:focus-visible {
 }
 
 .modal-card-xl {
-  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  width: 90vw;
+  max-width: 1200px;
   max-height: 92vh;
-  padding: 2.25rem 2.25rem 2rem;
+  padding: 30px;
+  overflow: hidden;
 }
 
 .movement-form {
@@ -494,14 +498,28 @@ button:focus-visible {
 }
 
 /* ---- Alta masiva (+ Agregar varios) ---- */
+.bulk-modal {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bulk-modal .modal-title {
+  font-size: 1.875rem;
+}
+
 .bulk-modal .bulk-hint {
-  margin: 0 0 0.9rem;
+  margin: 0 0 1rem;
   color: #64748b;
-  font-size: 0.92rem;
+  font-size: 0.925rem;
 }
 
 .bulk-table-wrap {
-  overflow-x: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   margin-bottom: 1.25rem;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -509,25 +527,28 @@ button:focus-visible {
 
 .bulk-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 950px;
   table-layout: fixed;
   border-collapse: collapse;
 }
 
 .bulk-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   text-align: left;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
   background: #f8fafc;
-  padding: 0.6rem 0.45rem;
+  padding: 0.6rem 0.6rem;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
 }
 
 .bulk-table td {
-  padding: 0.5rem 0.45rem;
+  padding: 0.5rem 0.6rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: top;
 }
@@ -538,39 +559,46 @@ button:focus-visible {
 
 .bulk-table th.col-nombre,
 .bulk-table td.col-nombre {
-  width: 235px;
+  width: 220px;
+  min-width: 220px;
 }
 
 .bulk-table th.col-categoria,
 .bulk-table td.col-categoria {
-  width: 195px;
+  width: 180px;
+  min-width: 180px;
 }
 
 .bulk-table th.col-cantidad,
 .bulk-table td.col-cantidad {
-  width: 138px;
+  width: 130px;
+  min-width: 130px;
 }
 
 .bulk-table th.col-precio,
 .bulk-table td.col-precio {
-  width: 138px;
+  width: 130px;
+  min-width: 130px;
 }
 
 .bulk-table th.col-stock,
 .bulk-table td.col-stock {
-  width: 148px;
+  width: 150px;
+  min-width: 150px;
 }
 
 .bulk-table th.col-accion,
 .bulk-table td.col-accion {
-  width: 64px;
+  width: 80px;
+  min-width: 80px;
 }
 
 .bulk-table input,
 .bulk-table select {
   width: 100%;
-  padding: 0.5rem 0.6rem;
-  font-size: 0.875rem;
+  height: 42px;
+  padding: 8px 12px;
+  font-size: 14px;
   border: 1px solid #cbd5e1;
   border-radius: 7px;
   color: #1e293b;
@@ -594,8 +622,14 @@ button:focus-visible {
   background: transparent;
   color: #ef4444;
   box-shadow: none;
-  padding: 0.35rem 0.5rem;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .bulk-remove-btn:hover {
@@ -609,6 +643,7 @@ button:focus-visible {
 }
 
 .bulk-footer {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
