@@ -272,7 +272,7 @@ function Productos() {
       )}
 
       {showBulk && (
-        <Modal onClose={() => setShowBulk(false)} size="lg">
+        <Modal onClose={() => setShowBulk(false)} size="xl">
           <ProductBulk
             onCancel={() => setShowBulk(false)}
             onSave={handleBulkSave}

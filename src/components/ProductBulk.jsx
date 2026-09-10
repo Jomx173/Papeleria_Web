@@ -82,18 +82,18 @@ function ProductBulk({ onCancel, onSave }) {
         <table className="bulk-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Categoría</th>
-              <th>Cantidad</th>
-              <th>Precio</th>
-              <th>Stock mínimo</th>
-              <th>Acción</th>
+              <th className="col-nombre">Nombre</th>
+              <th className="col-categoria">Categoría</th>
+              <th className="col-cantidad">Cantidad</th>
+              <th className="col-precio">Precio</th>
+              <th className="col-stock">Stock mínimo</th>
+              <th className="col-accion">Acción</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, index) => (
               <tr key={index}>
-                <td>
+                <td className="col-nombre">
                   <input
                     type="text"
                     value={row.nombre}
@@ -104,7 +104,7 @@ function ProductBulk({ onCancel, onSave }) {
                     <span className="field-error">{rowErrors[index].nombre}</span>
                   )}
                 </td>
-                <td>
+                <td className="col-categoria">
                   <select
                     value={row.categoria_id}
                     onChange={(e) => updateRow(index, "categoria_id", e.target.value)}
@@ -120,7 +120,7 @@ function ProductBulk({ onCancel, onSave }) {
                     <span className="field-error">{rowErrors[index].categoria_id}</span>
                   )}
                 </td>
-                <td>
+                <td className="col-cantidad">
                   <input
                     type="number"
                     min="0"
@@ -133,7 +133,7 @@ function ProductBulk({ onCancel, onSave }) {
                     <span className="field-error">{rowErrors[index].cantidad}</span>
                   )}
                 </td>
-                <td>
+                <td className="col-precio">
                   <input
                     type="number"
                     min="0.01"
@@ -146,7 +146,7 @@ function ProductBulk({ onCancel, onSave }) {
                     <span className="field-error">{rowErrors[index].precio}</span>
                   )}
                 </td>
-                <td>
+                <td className="col-stock">
                   <input
                     type="number"
                     min="0"
@@ -159,7 +159,7 @@ function ProductBulk({ onCancel, onSave }) {
                     <span className="field-error">{rowErrors[index].stock_minimo}</span>
                   )}
                 </td>
-                <td>
+                <td className="col-accion">
                   <button
                     type="button"
                     className="bulk-remove-btn"
