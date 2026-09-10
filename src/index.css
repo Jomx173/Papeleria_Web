@@ -1220,7 +1220,7 @@ button:focus-visible {
   width: 300px;
   height: 300px;
   top: -80px;
-  left: -90px;
+  left: 1.5rem;
   background: rgba(79, 70, 229, 0.16);
 }
 
@@ -1252,7 +1252,7 @@ button:focus-visible {
   width: 230px;
   height: 230px;
   bottom: 6%;
-  left: -70px;
+  left: 1.5rem;
   background: rgba(234, 88, 12, 0.12);
 }
 
