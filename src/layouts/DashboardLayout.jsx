@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { getLowStockProducts } from "../services/api";
 import PageBackground from "../components/PageBackground";
@@ -35,6 +35,7 @@ function DashboardLayout() {
   });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertas, setAlertas] = useState([]);
+  const notifRef = useRef(null);
 
   const toggleSidebarColapsado = () => {
     setSidebarColapsado((prev) => {
@@ -55,6 +56,17 @@ function DashboardLayout() {
       .then((data) => setAlertas(data))
       .catch(() => setAlertas([]));
   }, []);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const handleClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notificationsOpen]);
 
   const estadoLabel = {
     en_stock: "En stock",
@@ -164,7 +176,7 @@ function DashboardLayout() {
           )}
 
           <div className="topbar-right">
-            <div className="notif-wrapper">
+            <div className="notif-wrapper" ref={notifRef}>
               <button
                 className="topbar-icon-btn"
                 onClick={() => setNotificationsOpen((open) => !open)}
@@ -200,7 +212,6 @@ function DashboardLayout() {
                 aria-expanded="false"
               >
                 <FaUserCircle size={26} />
-                <span>Admin</span>
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
                 <li>
