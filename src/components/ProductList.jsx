@@ -45,28 +45,29 @@ function ProductList({
 
   return (
     <>
-      <table className="product-table">
-        <thead>
-          <tr>
-            <th className="check-col">
-              <input
-                type="checkbox"
-                aria-label="Seleccionar todos"
-                checked={selectAllChecked}
-                ref={(el) => {
-                  if (el) el.indeterminate = partialSelect;
-                }}
-                onChange={onSelectAll}
-              />
-            </th>
-            <th>Nombre</th>
-            <th>Cantidad</th>
-            <th>Precio</th>
-            <th>Estado</th>
-            <th>Categoría</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="table-responsive">
+        <table className="product-table products-table">
+          <thead>
+            <tr>
+              <th className="check-col">
+                <input
+                  type="checkbox"
+                  aria-label="Seleccionar todos"
+                  checked={selectAllChecked}
+                  ref={(el) => {
+                    if (el) el.indeterminate = partialSelect;
+                  }}
+                  onChange={onSelectAll}
+                />
+              </th>
+              <th>Nombre</th>
+              <th>Cantidad</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              <th>Categoría</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
         <tbody>
           {products.length === 0 ? (
             <tr>
@@ -155,7 +156,8 @@ function ProductList({
           )}
         </tbody>
       </table>
-      {detail && (
+    </div>
+    {detail && (
         <Modal onClose={() => setDetail(null)}>
           <div className="product-detail">
             <h3>{detail.nombre}</h3>

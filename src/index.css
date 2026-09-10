@@ -231,10 +231,37 @@ button:focus-visible {
   margin-right: 0;
 }
 
-.product-table:not(.table-responsive .product-table) {
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
+/* ---- Productos: distribución de columnas ---- */
+.products-table {
+  width: 100%;
+}
+
+.products-table th:nth-child(1) {
+  width: 4%;
+}
+
+.products-table th:nth-child(2) {
+  width: 26%;
+}
+
+.products-table th:nth-child(3) {
+  width: 12%;
+}
+
+.products-table th:nth-child(4) {
+  width: 12%;
+}
+
+.products-table th:nth-child(5) {
+  width: 14%;
+}
+
+.products-table th:nth-child(6) {
+  width: 17%;
+}
+
+.products-table th:nth-child(7) {
+  width: 15%;
 }
 
 /* ---- Stock bajo ---- */
