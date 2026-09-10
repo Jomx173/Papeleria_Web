@@ -1,4 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4001/api";
+const API_RAW = String(
+  import.meta.env.VITE_API_URL || "http://localhost:4001/api"
+)
+  .trim()
+  .replace(/\/+$/, "");
+const API_URL = /\/api$/i.test(API_RAW) ? API_RAW : `${API_RAW}/api`;
 
 async function request(url, options = {}) {
   const res = await fetch(`${API_URL}${url}`, {
