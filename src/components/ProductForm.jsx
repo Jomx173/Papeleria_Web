@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCategories } from "../services/api";
-
-const emptyProduct = {
-  nombre: "",
-  cantidad: "",
-  precio: "",
-  stock_minimo: 5,
-  categoria_id: "",
-};
+import { validateProduct } from "../utils/productValidation";
 
 function ProductForm({ initialProduct, onSubmit, onCancel }) {
   const [form, setForm] = useState(() =>
@@ -19,9 +12,10 @@ function ProductForm({ initialProduct, onSubmit, onCancel }) {
           stock_minimo: initialProduct.stock_minimo ?? 5,
           categoria_id: initialProduct.categoria_id ?? "",
         }
-      : emptyProduct
+      : { nombre: "", cantidad: "", precio: "", stock_minimo: 5, categoria_id: "" }
   );
   const [categories, setCategories] = useState([]);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     getCategories()
@@ -32,36 +26,51 @@ function ProductForm({ initialProduct, onSubmit, onCancel }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const stockMinimo = form.stock_minimo === "" || form.stock_minimo == null
-      ? 5
-      : Number(form.stock_minimo);
-    const data = {
-      nombre: form.nombre.trim(),
-      cantidad: Number(form.cantidad),
-      precio: Number(form.precio),
-      stock_minimo: stockMinimo,
-      categoria_id: form.categoria_id === "" ? null : Number(form.categoria_id),
-    };
+    const { errors: errs, data } = validateProduct(form);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
     onSubmit(data);
   };
 
   return (
-    <form className="product-form" onSubmit={handleSubmit}>
-      <h3>{initialProduct ? "Editar producto" : "Nuevo producto"}</h3>
+    <form className="product-form product-form-compact" onSubmit={handleSubmit} noValidate>
+      <h3 className="modal-title">
+        {initialProduct ? "Editar producto" : "Nuevo producto"}
+      </h3>
 
-      <label>
+      <label className="span-2">
         Nombre
         <input
           type="text"
           name="nombre"
           value={form.nombre}
           onChange={handleChange}
-          required
+          placeholder="Nombre del producto"
+          autoFocus
         />
+        {errors.nombre && <span className="field-error">{errors.nombre}</span>}
+      </label>
+
+      <label className="span-2">
+        Categoría
+        <select name="categoria_id" value={form.categoria_id} onChange={handleChange}>
+          <option value="">Seleccionar categoría</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.nombre}
+            </option>
+          ))}
+        </select>
+        {errors.categoria_id && <span className="field-error">{errors.categoria_id}</span>}
       </label>
 
       <label>
@@ -73,11 +82,26 @@ function ProductForm({ initialProduct, onSubmit, onCancel }) {
           step="1"
           value={form.cantidad}
           onChange={handleChange}
-          required
+          placeholder="0"
         />
+        {errors.cantidad && <span className="field-error">{errors.cantidad}</span>}
       </label>
 
       <label>
+        Precio
+        <input
+          type="number"
+          name="precio"
+          min="0.01"
+          step="0.01"
+          value={form.precio}
+          onChange={handleChange}
+          placeholder="0.00"
+        />
+        {errors.precio && <span className="field-error">{errors.precio}</span>}
+      </label>
+
+      <label className="span-2">
         Stock mínimo
         <input
           type="number"
@@ -86,37 +110,15 @@ function ProductForm({ initialProduct, onSubmit, onCancel }) {
           step="1"
           value={form.stock_minimo}
           onChange={handleChange}
-          required
+          placeholder="5"
         />
-      </label>
-
-      <label>
-        Precio
-        <input
-          type="number"
-          name="precio"
-          min="0"
-          step="0.01"
-          value={form.precio}
-          onChange={handleChange}
-          required
-        />
-      </label>
-
-      <label>
-        Categoría
-        <select name="categoria_id" value={form.categoria_id} onChange={handleChange}>
-          <option value="">Sin categoría</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.nombre}
-            </option>
-          ))}
-        </select>
+        {errors.stock_minimo && <span className="field-error">{errors.stock_minimo}</span>}
       </label>
 
       <div className="form-actions">
-        <button type="submit">{initialProduct ? "Guardar cambios" : "Crear producto"}</button>
+        <button type="submit">
+          {initialProduct ? "Guardar cambios" : "Registrar producto"}
+        </button>
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancelar
         </button>

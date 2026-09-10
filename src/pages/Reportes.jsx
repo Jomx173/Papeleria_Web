@@ -90,7 +90,6 @@ function Reportes() {
 
   const exportRows = products.map((p) => ({
     Nombre: p.nombre,
-    Codigo: p.codigo,
     Cantidad: Number(p.cantidad),
     Precio: Number(p.precio).toFixed(2),
     Categoria: p.categoria || "Sin categoría",
@@ -102,8 +101,8 @@ function Reportes() {
     doc.text("Reporte de productos - Papelería", 14, 18);
     autoTable(doc, {
       startY: 26,
-      head: [["Nombre", "Código", "Cantidad", "Precio", "Categoría"]],
-      body: exportRows.map((r) => [r.Nombre, r.Codigo, r.Cantidad, r.Precio, r.Categoria]),
+      head: [["Nombre", "Cantidad", "Precio", "Categoría"]],
+      body: exportRows.map((r) => [r.Nombre, r.Cantidad, r.Precio, r.Categoria]),
     });
     doc.save(`productos_${new Date().toISOString().slice(0, 10)}.pdf`);
   };

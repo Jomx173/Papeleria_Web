@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FaEllipsisV, FaEye, FaPencilAlt, FaTrash } from "react-icons/fa";
 import { getCategoryColor } from "../utils/categoryColors";
-import { getCategoryIcon } from "../utils/categoryIcons";
 import Modal from "./Modal";
 
 const ESTADO_BADGES = {
@@ -60,7 +59,6 @@ function ProductList({
                 onChange={onSelectAll}
               />
             </th>
-            <th>Imagen</th>
             <th>Nombre</th>
             <th>Cantidad</th>
             <th>Precio</th>
@@ -72,7 +70,7 @@ function ProductList({
         <tbody>
           {products.length === 0 ? (
             <tr>
-              <td colSpan="8" className="empty-row">
+              <td colSpan="7" className="empty-row">
                 No hay productos registrados
               </td>
             </tr>
@@ -89,21 +87,7 @@ function ProductList({
                       onChange={() => onToggleSelect(product.id)}
                     />
                   </td>
-<td>
-                {(function () {
-                  const CatIcon = getCategoryIcon(product.categoria);
-                  return (
-                    <span
-                      className="product-thumb"
-                      style={{ background: cat.bg, color: cat.fg }}
-                      title={product.categoria || "Sin categoría"}
-                    >
-                      <CatIcon />
-                    </span>
-                  );
-                })()}
-              </td>
-                  <td className="product-name">
+<td className="product-name">
                     {product.stockBajo && <span title="Stock bajo">⚠️</span>} {product.nombre}
                   </td>
                   <td className={product.stockBajo ? "cantidad-baja" : ""}>{product.cantidad}</td>
@@ -176,10 +160,6 @@ function ProductList({
           <div className="product-detail">
             <h3>{detail.nombre}</h3>
             <div className="product-detail-grid">
-              <div className="detail-field">
-                <span className="detail-label">Código</span>
-                <span className="detail-value">{detail.codigo}</span>
-              </div>
               <div className="detail-field">
                 <span className="detail-label">Estado</span>
                 <span className={`estado-badge ${(ESTADO_BADGES[detail.estado] || ESTADO_BADGES.stock_bajo).cls}`}>

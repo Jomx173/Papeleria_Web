@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaTags,
@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import ProductList from "../components/ProductList";
 import ProductForm from "../components/ProductForm";
+import ProductBulk from "../components/ProductBulk";
 import CategoryFilter from "../components/CategoryFilter";
 import StockAlert from "../components/StockAlert";
 import Modal from "../components/Modal";
@@ -29,9 +30,20 @@ function Productos() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [toast, setToast] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
+  const toastTimer = useRef(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+
+  const showToast = (message) => {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 3500);
+  };
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const loadProducts = useCallback(() => {
     getProducts()
@@ -65,11 +77,28 @@ function Productos() {
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, data);
+        showToast("Cambios guardados correctamente.");
       } else {
         await createProduct(data);
+        showToast("Producto registrado correctamente.");
       }
       setShowForm(false);
       setEditingProduct(null);
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleBulkSave = async (products) => {
+    try {
+      await Promise.all(products.map((product) => createProduct(product)));
+      setShowBulk(false);
+      showToast(
+        `${products.length} producto${products.length === 1 ? "" : "s"} registrado${
+          products.length === 1 ? "" : "s"
+        } correctamente.`
+      );
       loadProducts();
     } catch (err) {
       setError(err.message);
@@ -165,6 +194,7 @@ function Productos() {
 
       <div className="container">
         {error && <div className="error-banner">{error}</div>}
+        {toast && <div className="success-banner">{toast}</div>}
 
         <StockAlert />
 
@@ -175,6 +205,9 @@ function Productos() {
           </Link>
           <button onClick={handleNewProduct}>
             <FaPlus /> Nuevo producto
+          </button>
+          <button className="btn-outline" onClick={() => setShowBulk(true)}>
+            <FaPlus /> Agregar varios
           </button>
         </div>
 
@@ -234,6 +267,15 @@ function Productos() {
             initialProduct={editingProduct}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+          />
+        </Modal>
+      )}
+
+      {showBulk && (
+        <Modal onClose={() => setShowBulk(false)} size="lg">
+          <ProductBulk
+            onCancel={() => setShowBulk(false)}
+            onSave={handleBulkSave}
           />
         </Modal>
       )}

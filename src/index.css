@@ -437,6 +437,185 @@ button:focus-visible {
   border-radius: 8px;
 }
 
+.product-form-compact .span-2 {
+  grid-column: 1 / -1;
+}
+
+/* ---- Modal de producto: compacto ---- */
+.product-form-compact .modal-title,
+.bulk-modal .modal-title {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.5rem, 1.85rem, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+  grid-column: 1 / -1;
+}
+
+.product-form-compact {
+  gap: 1rem;
+}
+
+.product-form-compact label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.3rem;
+}
+
+.product-form-compact input,
+.product-form-compact select {
+  font-size: 0.875rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.product-form-compact .form-actions {
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.product-form-compact .form-actions button {
+  font-size: 0.875rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 8px;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ---- Alta masiva (+ Agregar varios) ---- */
+.bulk-modal .bulk-hint {
+  margin: 0 0 0.9rem;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.bulk-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.bulk-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.bulk-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.bulk-table td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.bulk-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bulk-table input,
+.bulk-table select {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  color: #1e293b;
+  background: #fff;
+  font-family: inherit;
+}
+
+.bulk-table input:focus,
+.bulk-table select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.bulk-table .field-error {
+  display: block;
+  margin-top: 0.3rem;
+}
+
+.bulk-remove-btn {
+  background: transparent;
+  color: #ef4444;
+  box-shadow: none;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.bulk-remove-btn:hover {
+  background: #fee2e2;
+  box-shadow: none;
+}
+
+.bulk-remove-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.bulk-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.bulk-footer .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 8px;
+}
+
+.bulk-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.bulk-footer-actions button {
+  font-size: 0.875rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 8px;
+}
+
+@media (max-width: 575.98px) {
+  .product-form-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .bulk-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bulk-footer-actions {
+    justify-content: flex-end;
+  }
+}
+
 /* ---- Fila menú (tres puntos) ---- */
 .row-menu-wrap {
   position: relative;
