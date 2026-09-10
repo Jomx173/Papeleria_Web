@@ -23,6 +23,7 @@ import {
 } from "../services/api";
 import { getCategoryIcon } from "../utils/categoryIcons";
 import { getCategoryColor } from "../utils/categoryColors";
+import AnimatedNumber from "../components/AnimatedNumber";
 
 function Categorias() {
   const [categories, setCategories] = useState([]);
@@ -125,19 +126,22 @@ function Categorias() {
   const stats = [
     {
       label: "Categorías registradas",
-      value: summary ? summary.totalCategorias : "—",
+      raw: summary ? Number(summary.totalCategorias) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: <FaTags />,
       cls: "violet",
     },
     {
       label: "Productos en total",
-      value: summary ? summary.totalProductos : "—",
+      raw: summary ? Number(summary.totalProductos) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: <FaBoxOpen />,
       cls: "blue",
     },
     {
       label: "Categorías con productos",
-      value: summary ? summary.categoriasConProductos : "—",
+      raw: summary ? Number(summary.categoriasConProductos) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: <FaCheckCircle />,
       cls: "green",
     },
@@ -172,13 +176,13 @@ function Categorias() {
         {error && <div className="error-banner">{error}</div>}
 
       <div className="row g-3 mb-3">
-        {stats.map((stat) => (
+        {stats.map((stat, i) => (
           <div className="col-12 col-md-4" key={stat.label}>
             <div className="stat-card">
               <span className={`stat-icon ${stat.cls}`}>{stat.icon}</span>
               <div>
                 <p className="stat-label">{stat.label}</p>
-                <p className="stat-value">{stat.value}</p>
+                <p className="stat-value">{stat.raw == null ? "—" : <AnimatedNumber value={stat.raw} format={stat.fmt} delay={i * 90} />}</p>
               </div>
             </div>
           </div>
@@ -231,7 +235,7 @@ function Categorias() {
               />
             </div>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={handleCancel}>
+              <button type="button" className="btn-secondary" data-close-modal>
                 Cancelar
               </button>
               <button type="submit">{editing ? "Guardar" : "Crear"}</button>

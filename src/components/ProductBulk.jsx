@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { getCategories } from "../services/api";
 import { validateProduct } from "../utils/productValidation";
 
+let nextRowId = 0;
+
 const newRow = () => ({
+  id: ++nextRowId,
   nombre: "",
   categoria_id: "",
   cantidad: "",
@@ -11,10 +14,12 @@ const newRow = () => ({
   stock_minimo: 5,
 });
 
-function ProductBulk({ onCancel, onSave }) {
+function ProductBulk({ onSave }) {
   const [rows, setRows] = useState([newRow()]);
+  const [leaving, setLeaving] = useState([]);
   const [categories, setCategories] = useState([]);
   const [rowErrors, setRowErrors] = useState({});
+  const removeTimers = useRef({});
 
   useEffect(() => {
     getCategories()
@@ -22,12 +27,16 @@ function ProductBulk({ onCancel, onSave }) {
       .catch(() => setCategories([]));
   }, []);
 
+  useEffect(() => () => {
+    Object.values(removeTimers.current).forEach((t) => clearTimeout(t));
+  }, []);
+
   const updateRow = (index, field, value) => {
     setRows((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
     setRowErrors((prev) => {
-      if (!prev[index]) return prev;
+      if (!prev[rows[index].id]) return prev;
       const next = { ...prev };
-      delete next[index];
+      delete next[rows[index].id];
       return next;
     });
   };
@@ -36,8 +45,19 @@ function ProductBulk({ onCancel, onSave }) {
     setRows((prev) => [...prev, newRow()]);
   };
 
-  const removeRow = (index) => {
-    setRows((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  const removeRow = (id) => {
+    if (rows.length === 1 || leaving.includes(id)) return;
+    setLeaving((prev) => [...prev, id]);
+    removeTimers.current[id] = setTimeout(() => {
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      setRowErrors((prev) => {
+        if (!prev[id]) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setLeaving((prev) => prev.filter((x) => x !== id));
+    }, 200);
   };
 
   const handleSave = () => {
@@ -45,10 +65,10 @@ function ProductBulk({ onCancel, onSave }) {
     const data = [];
     let hasErrors = false;
 
-    rows.forEach((row, index) => {
+    rows.forEach((row) => {
       const result = validateProduct(row);
       if (Object.keys(result.errors).length > 0) {
-        errs[index] = result.errors;
+        errs[row.id] = result.errors;
         hasErrors = true;
       }
       data.push(result.data ?? {});
@@ -92,7 +112,7 @@ function ProductBulk({ onCancel, onSave }) {
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={index}>
+              <tr key={row.id} className={leaving.includes(row.id) ? "row-removing" : ""}>
                 <td className="col-nombre">
                   <input
                     type="text"
@@ -100,8 +120,8 @@ function ProductBulk({ onCancel, onSave }) {
                     onChange={(e) => updateRow(index, "nombre", e.target.value)}
                     placeholder="Ej. Bolígrafo azul"
                   />
-                  {rowErrors[index]?.nombre && (
-                    <span className="field-error">{rowErrors[index].nombre}</span>
+                  {rowErrors[row.id]?.nombre && (
+                    <span className="field-error">{rowErrors[row.id].nombre}</span>
                   )}
                 </td>
                 <td className="col-categoria">
@@ -116,8 +136,8 @@ function ProductBulk({ onCancel, onSave }) {
                       </option>
                     ))}
                   </select>
-                  {rowErrors[index]?.categoria_id && (
-                    <span className="field-error">{rowErrors[index].categoria_id}</span>
+                  {rowErrors[row.id]?.categoria_id && (
+                    <span className="field-error">{rowErrors[row.id].categoria_id}</span>
                   )}
                 </td>
                 <td className="col-cantidad">
@@ -129,8 +149,8 @@ function ProductBulk({ onCancel, onSave }) {
                     onChange={(e) => updateRow(index, "cantidad", e.target.value)}
                     placeholder="0"
                   />
-                  {rowErrors[index]?.cantidad && (
-                    <span className="field-error">{rowErrors[index].cantidad}</span>
+                  {rowErrors[row.id]?.cantidad && (
+                    <span className="field-error">{rowErrors[row.id].cantidad}</span>
                   )}
                 </td>
                 <td className="col-precio">
@@ -142,8 +162,8 @@ function ProductBulk({ onCancel, onSave }) {
                     onChange={(e) => updateRow(index, "precio", e.target.value)}
                     placeholder="0.00"
                   />
-                  {rowErrors[index]?.precio && (
-                    <span className="field-error">{rowErrors[index].precio}</span>
+                  {rowErrors[row.id]?.precio && (
+                    <span className="field-error">{rowErrors[row.id].precio}</span>
                   )}
                 </td>
                 <td className="col-stock">
@@ -155,8 +175,8 @@ function ProductBulk({ onCancel, onSave }) {
                     onChange={(e) => updateRow(index, "stock_minimo", e.target.value)}
                     placeholder="5"
                   />
-                  {rowErrors[index]?.stock_minimo && (
-                    <span className="field-error">{rowErrors[index].stock_minimo}</span>
+                  {rowErrors[row.id]?.stock_minimo && (
+                    <span className="field-error">{rowErrors[row.id].stock_minimo}</span>
                   )}
                 </td>
                 <td className="col-accion">
@@ -165,7 +185,7 @@ function ProductBulk({ onCancel, onSave }) {
                     className="bulk-remove-btn"
                     aria-label="Quitar fila"
                     disabled={rows.length === 1}
-                    onClick={() => removeRow(index)}
+                    onClick={() => removeRow(row.id)}
                   >
                     <FaTrash />
                   </button>
@@ -181,11 +201,12 @@ function ProductBulk({ onCancel, onSave }) {
           <FaPlus /> Agregar fila
         </button>
         <div className="bulk-footer-actions">
-          <button type="button" className="btn-secondary" onClick={onCancel}>
+          <button type="button" className="btn-secondary" data-close-modal>
             Cancelar
           </button>
           <button type="button" onClick={handleSave}>
-            Guardar {rows.length} producto{rows.length === 1 ? "" : "s"}
+            Guardar <span key={rows.length} className="bulk-count">{rows.length}</span> producto
+            {rows.length === 1 ? "" : "s"}
           </button>
         </div>
       </div>

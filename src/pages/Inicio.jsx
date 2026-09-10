@@ -27,6 +27,7 @@ import {
 } from "recharts";
 import { getSummary, getProducts, getLowStockProducts, getMonthlyMovements } from "../services/api";
 import { getCssVar } from "../theme.js";
+import AnimatedNumber from "../components/AnimatedNumber";
 
 const formatCurrency = (value) =>
   `L. ${Number(value || 0).toLocaleString("es-HN", {
@@ -91,25 +92,29 @@ function Inicio() {
   const cards = [
     {
       label: "Total de productos",
-      value: summary ? String(summary.totalProductos) : "—",
+      raw: summary ? Number(summary.totalProductos) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: FaBoxOpen,
       accent: "violet",
     },
     {
       label: "Categorías",
-      value: summary ? String(summary.totalCategorias) : "—",
+      raw: summary ? Number(summary.totalCategorias) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: FaTags,
       accent: "blue",
     },
     {
       label: "Stock bajo",
-      value: summary ? String(summary.stockBajo) : "—",
+      raw: summary ? Number(summary.stockBajo) : null,
+      fmt: (v) => String(Math.round(v)),
       icon: FaExclamationTriangle,
       accent: summary && summary.stockBajo > 0 ? "orange" : "green",
     },
     {
       label: "Valor del inventario",
-      value: summary ? formatCurrency(summary.valorInventario) : "—",
+      raw: summary ? Number(summary.valorInventario) : null,
+      fmt: (v) => formatCurrency(v),
       icon: FaDollarSign,
       accent: "green",
     },
@@ -146,7 +151,7 @@ function Inicio() {
       {!loading && !error && (
         <>
           <div className="row g-3 mb-4">
-            {cards.map((card) => (
+            {cards.map((card, i) => (
               <div key={card.label} className="col-12 col-md-6 col-xl-3">
                 <div className={`inicio-card accent-${card.accent}`}>
                   <span className="inicio-card-watermark" aria-hidden="true">
@@ -157,7 +162,9 @@ function Inicio() {
                   </div>
                   <div className="inicio-card-body">
                     <span className="inicio-card-label">{card.label}</span>
-                    <span className="inicio-card-value">{card.value}</span>
+                    <span className="inicio-card-value">
+                      {card.raw == null ? "—" : <AnimatedNumber value={card.raw} format={card.fmt} delay={i * 90} />}
+                    </span>
                   </div>
                 </div>
               </div>

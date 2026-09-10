@@ -225,7 +225,9 @@ function DashboardLayout() {
         </header>
 
         <main className="dashboard-content">
-          <Outlet />
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

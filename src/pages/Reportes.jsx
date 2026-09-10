@@ -35,6 +35,7 @@ import {
 import { getCategoryColor } from "../utils/categoryColors";
 import { getCssVar } from "../theme.js";
 import { exportProductosExcel, exportProductosPdf } from "../utils/exportProductos";
+import AnimatedNumber from "../components/AnimatedNumber";
 
 const fmtMoney = (value) =>
   `$${Number(value || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -106,10 +107,10 @@ function Reportes() {
   };
 
   const stats = [
-    { label: "Total de productos", value: summary ? summary.totalProductos : "…", icon: <FaBoxOpen />, cls: "violet" },
-    { label: "Total de unidades", value: summary ? totalUnidades : "…", icon: <FaBoxes />, cls: "blue" },
-    { label: "Valor del inventario", value: summary ? fmtMoney(summary.valorInventario) : "…", icon: <FaDollarSign />, cls: "green" },
-    { label: "Productos con stock bajo", value: summary ? summary.stockBajo : "…", icon: <FaExclamationTriangle />, cls: "orange" },
+    { label: "Total de productos", raw: summary ? Number(summary.totalProductos) : null, fmt: (v) => String(Math.round(v)), icon: <FaBoxOpen />, cls: "violet" },
+    { label: "Total de unidades", raw: summary ? totalUnidades : null, fmt: (v) => String(Math.round(v)), icon: <FaBoxes />, cls: "blue" },
+    { label: "Valor del inventario", raw: summary ? Number(summary.valorInventario) : null, fmt: (v) => fmtMoney(v), icon: <FaDollarSign />, cls: "green" },
+    { label: "Productos con stock bajo", raw: summary ? Number(summary.stockBajo) : null, fmt: (v) => String(Math.round(v)), icon: <FaExclamationTriangle />, cls: "orange" },
   ];
 
   return (
@@ -140,13 +141,13 @@ function Reportes() {
         {error && <div className="error-banner">{error}</div>}
 
       <div className="row g-3 mb-4 reportes-stats">
-        {stats.map((stat) => (
+        {stats.map((stat, i) => (
           <div className="col-6 col-lg-3" key={stat.label}>
             <div className="stat-card">
               <span className={`stat-icon ${stat.cls}`}>{stat.icon}</span>
               <div>
                 <p className="stat-label">{stat.label}</p>
-                <p className="stat-value">{stat.value}</p>
+                <p className="stat-value">{stat.raw == null ? "…" : <AnimatedNumber value={stat.raw} format={stat.fmt} delay={i * 90} />}</p>
               </div>
             </div>
           </div>

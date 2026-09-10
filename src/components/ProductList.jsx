@@ -192,7 +192,7 @@ function ProductList({
               </div>
             </div>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setDetail(null)}>
+              <button type="button" className="btn-secondary" data-close-modal>
                 Cerrar
               </button>
             </div>

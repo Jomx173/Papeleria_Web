@@ -257,7 +257,7 @@ function Movimientos() {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => setShowForm(false)}
+                data-close-modal
               >
                 Cancelar
               </button>
@@ -305,7 +305,7 @@ function Movimientos() {
               </div>
             </div>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setViewing(null)}>
+              <button type="button" className="btn-secondary" data-close-modal>
                 Cerrar
               </button>
             </div>

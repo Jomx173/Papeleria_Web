@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getCategories } from "../services/api";
 import { validateProduct } from "../utils/productValidation";
 
-function ProductForm({ initialProduct, onSubmit, onCancel }) {
+function ProductForm({ initialProduct, onSubmit }) {
   const [form, setForm] = useState(() =>
     initialProduct
       ? {
@@ -119,7 +119,7 @@ function ProductForm({ initialProduct, onSubmit, onCancel }) {
         <button type="submit">
           {initialProduct ? "Guardar cambios" : "Registrar producto"}
         </button>
-        <button type="button" className="btn-secondary" onClick={onCancel}>
+        <button type="button" className="btn-secondary" data-close-modal>
           Cancelar
         </button>
       </div>

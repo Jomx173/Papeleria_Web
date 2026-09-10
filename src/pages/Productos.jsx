@@ -380,7 +380,7 @@ function Productos() {
               {selectedIds.length === 1 ? "" : "s"}?
             </p>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
+              <button type="button" className="btn-secondary" data-close-modal>
                 Cancelar
               </button>
               <button type="button" className="btn-danger" onClick={handleDeleteSelected}>
@@ -442,7 +442,7 @@ function Productos() {
               <button type="button" onClick={handleApplyAdjust} disabled={adjusting}>
                 {adjusting ? "Aplicando..." : "Aplicar ajuste"}
               </button>
-              <button type="button" className="btn-secondary" onClick={() => setShowAdjust(false)}>
+              <button type="button" className="btn-secondary" data-close-modal>
                 Cancelar
               </button>
             </div>
