@@ -60,7 +60,7 @@ function Productos() {
 
   const handleNewProduct = () => {
     setEditingProduct(null);
-    setShowForm(true);
+    setShowBulk(true);
   };
 
   const handleEdit = (product) => {
@@ -205,9 +205,6 @@ function Productos() {
           </Link>
           <button onClick={handleNewProduct}>
             <FaPlus /> Nuevo producto
-          </button>
-          <button className="btn-outline" onClick={() => setShowBulk(true)}>
-            <FaPlus /> Agregar varios
           </button>
         </div>
 
