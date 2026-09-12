@@ -247,7 +247,6 @@ function DashboardLayout() {
             className="bottom-nav-link"
             onClick={closeSidebar}
             aria-label={item.label}
-            data-center={item.to === "/movimientos" ? true : undefined}
           >
             <item.icon />
           </NavLink>
