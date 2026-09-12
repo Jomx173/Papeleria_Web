@@ -1130,7 +1130,7 @@ button:focus-visible {
 
 .sidebar-collapse-btn {
   position: fixed;
-  top: 50%;
+  top: 66px;
   left: 240px;
   margin-left: -16px;
   transform: translateY(-50%);
