@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { getLowStockProducts } from "../services/api";
 import PageBackground from "../components/PageBackground";
@@ -8,12 +8,10 @@ import {
   FaTags,
   FaExchangeAlt,
   FaChartBar,
-FaCog,
+  FaCog,
   FaBell,
   FaChevronLeft,
   FaChevronRight,
-  FaUserCircle,
-  FaSearch,
   FaBook,
   FaPencilAlt,
   FaPaperclip,
@@ -36,6 +34,31 @@ function DashboardLayout() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertas, setAlertas] = useState([]);
   const notifRef = useRef(null);
+  const navRef = useRef(null);
+  const indicatorRef = useRef(null);
+
+  const updateSidebarIndicator = useCallback(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+    const activeLink = nav.querySelector(".sidebar-link.active");
+    if (!activeLink) {
+      indicator.style.opacity = "0";
+      return;
+    }
+    indicator.style.transform = `translateY(${activeLink.offsetTop}px)`;
+    indicator.style.height = `${activeLink.offsetHeight}px`;
+    indicator.style.opacity = "1";
+  }, []);
+
+  useEffect(() => {
+    updateSidebarIndicator();
+  }, [location.pathname, sidebarColapsado, updateSidebarIndicator]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateSidebarIndicator);
+    return () => window.removeEventListener("resize", updateSidebarIndicator);
+  }, [updateSidebarIndicator]);
 
   const toggleSidebarColapsado = () => {
     setSidebarColapsado((prev) => {
@@ -48,8 +71,6 @@ function DashboardLayout() {
       return next;
     });
   };
-
-  const showTopbarSearch = location.pathname === "/productos";
 
   useEffect(() => {
     getLowStockProducts()
@@ -98,7 +119,8 @@ function DashboardLayout() {
           <span className="brand-text">PAPELERÍA</span>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" ref={navRef}>
+          <div className="sidebar-active-indicator" ref={indicatorRef} aria-hidden="true" />
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -168,13 +190,6 @@ function DashboardLayout() {
             {sidebarOpen ? <FaChevronLeft /> : <FaChevronRight />}
           </button>
 
-          {showTopbarSearch && (
-            <div className="topbar-search">
-              <FaSearch />
-              <input type="text" placeholder="Buscar productos..." />
-            </div>
-          )}
-
           <div className="topbar-right">
             <div className="notif-wrapper" ref={notifRef}>
               <button
@@ -204,22 +219,6 @@ function DashboardLayout() {
                   )}
                 </div>
               )}
-            </div>
-            <div className="dropdown">
-              <button
-                className="topbar-user dropdown-toggle"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <FaUserCircle size={26} />
-              </button>
-              <ul className="dropdown-menu dropdown-menu-end">
-                <li>
-                  <button className="dropdown-item" onClick={() => {}}>
-                    Cerrar sesión
-                  </button>
-                </li>
-              </ul>
             </div>
           </div>
         </header>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar, FaEye, FaTrash } from "react-icons/fa";
 import Modal from "../components/Modal";
+import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import { getMovements, createMovement, deleteMovement, getProducts } from "../services/api";
 
 const emptyForm = { producto_id: "", tipo: "entrada", cantidad: "", motivo: "" };
@@ -29,11 +30,14 @@ function Movimientos() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
+    setLoading(true);
     getMovements()
       .then(setMovements)
-      .catch((err) => setError(err.message));
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -115,8 +119,6 @@ function Movimientos() {
       </div>
 
       <div className="container">
-        {error && <div className="error-banner">{error}</div>}
-
       <div className="toolbar mx-0">
         <div className="toolbar-actions">
           <button onClick={openForm}>
@@ -125,6 +127,14 @@ function Movimientos() {
         </div>
       </div>
 
+      {loading ? (
+        <LoadingBlock label="Cargando movimientos" />
+      ) : error ? (
+        <ErrorBlock
+          message={`No se pudieron cargar los movimientos: ${error}`}
+          onRetry={load}
+        />
+      ) : (
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -186,6 +196,7 @@ function Movimientos() {
           </tbody>
         </table>
       </div>
+      )}
 
       {showForm && (
         <Modal onClose={() => setShowForm(false)} size="lg">

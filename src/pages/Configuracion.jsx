@@ -9,6 +9,7 @@ import {
   FaCog,
   FaStar,
   FaPaperclip,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { aplicarColores, getColorInicial } from "../theme.js";
 import { exportBackup, restoreBackup } from "../services/api";
@@ -22,8 +23,28 @@ const TABS = [
 
 function Configuracion() {
   const [activeTab, setActiveTab] = useState("preferencias");
-  const [umbral, setUmbral] = useState(5);
-  const [notif, setNotif] = useState({ stockBajo: true, agotados: true });
+  const [umbral, setUmbral] = useState(() => {
+    try {
+      const raw = localStorage.getItem("umbralStockBajo");
+      if (raw === null || raw === "") return 5;
+      const v = Number(raw);
+      return Number.isFinite(v) && v >= 0 ? v : 5;
+    } catch {
+      return 5;
+    }
+  });
+  const [notif, setNotif] = useState(() => {
+    const base = { stockBajo: true, agotados: true };
+    try {
+      const s = localStorage.getItem("notifStockBajo");
+      const a = localStorage.getItem("notifAgotados");
+      if (s !== null) base.stockBajo = s === "1";
+      if (a !== null) base.agotados = a === "1";
+    } catch {
+      // valores por defecto
+    }
+    return base;
+  });
   const coloresIniciales = getColorInicial();
   const [colorPrincipal, setColorPrincipal] = useState(coloresIniciales.principal);
   const [colorSecundario, setColorSecundario] = useState(coloresIniciales.secundario);
@@ -83,11 +104,68 @@ function Configuracion() {
     setAviso("");
     setAvisoError("");
   };
+
   const handleSave = () => {
+    setAviso("");
+    setAvisoError("");
+
+    if (activeTab === "respaldo") {
+      return;
+    }
+
     if (activeTab === "colores") {
       aplicarColores(colorPrincipal, colorSecundario);
+      setAviso("Cambios guardados.");
+      return;
     }
-    setAviso("Cambios guardados.");
+
+    if (activeTab === "preferencias") {
+      const n = Number(umbral);
+      if (!Number.isInteger(n) || n < 0) {
+        setAvisoError("El umbral de stock bajo debe ser un número entero mayor o igual a 0.");
+        return;
+      }
+      try {
+        localStorage.setItem("umbralStockBajo", String(n));
+      } catch {
+        setAvisoError("No se pudo guardar el umbral de stock bajo en este dispositivo.");
+        return;
+      }
+      setUmbral(n);
+      setAviso("Cambios guardados.");
+      return;
+    }
+
+    if (activeTab === "notificaciones") {
+      try {
+        localStorage.setItem("notifStockBajo", notif.stockBajo ? "1" : "0");
+        localStorage.setItem("notifAgotados", notif.agotados ? "1" : "0");
+      } catch {
+        setAvisoError("No se pudieron guardar las notificaciones en este dispositivo.");
+        return;
+      }
+      setAviso("Cambios guardados.");
+    }
+  };
+
+  const handleLogout = () => {
+    const confirmar = window.confirm(
+      "¿Deseas cerrar la sesión? Se restablecerán las preferencias y ajustes guardados en este dispositivo."
+    );
+    if (!confirmar) return;
+    try {
+      [
+        "colorPrincipal",
+        "colorSecundario",
+        "umbralStockBajo",
+        "notifStockBajo",
+        "notifAgotados",
+        "sidebar_colapsado",
+      ].forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // sin localStorage no hay nada que limpiar
+    }
+    window.location.href = "/";
   };
 
   const renderSection = () => {
@@ -102,6 +180,12 @@ function Configuracion() {
                 Se alertará cuando la cantidad de un producto sea menor o igual a este valor.
               </small>
             </label>
+            <div className="session-box">
+              <p className="report-hint">Controla la sesión de la aplicación en este dispositivo.</p>
+              <button type="button" className="btn-danger" onClick={handleLogout}>
+                <FaSignOutAlt /> Cerrar sesión
+              </button>
+            </div>
           </form>
         );
       case "respaldo":

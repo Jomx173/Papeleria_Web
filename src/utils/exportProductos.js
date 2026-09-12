@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { formatMoney } from "./formatMoney";
 
 const ESTADO_LABELS = {
   en_stock: "En stock",
@@ -14,7 +15,7 @@ export const buildProductRows = (products) =>
   products.map((p) => ({
     Nombre: p.nombre,
     Cantidad: Number(p.cantidad),
-    Precio: Number(p.precio).toFixed(2),
+    Precio: formatMoney(p.precio),
     Estado: estadoLabel(p.estado),
     Categoria: p.categoria || "Sin categoría",
   }));

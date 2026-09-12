@@ -89,9 +89,9 @@ function ProductBulk({ onSave }) {
 
   return (
     <div className="bulk-modal">
-      <h3 className="modal-title">Agregar varios productos</h3>
+      <h3 className="modal-title">Nuevo producto</h3>
       <p className="bulk-hint">
-        Completa la información de cada fila y guarda todos los productos a la vez.
+        Agrega uno o varios productos al inventario.
       </p>
 
       {errorCount > 0 && (

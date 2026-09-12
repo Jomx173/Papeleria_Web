@@ -50,7 +50,6 @@ h1 {
   margin: 0 auto;
   padding: 2rem 1.5rem;
   box-sizing: border-box;
-  overflow-x: clip;
 }
 
 /* ---- Toolbar: filtro + botones, alineados a la izquierda ---- */
@@ -182,6 +181,14 @@ button:focus-visible {
 }
 
 /* ---- Tabla como tarjeta ---- */
+.table-responsive {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
 .product-table {
   width: 100%;
   border-collapse: collapse;
@@ -1055,13 +1062,31 @@ button:focus-visible {
 }
 
 .sidebar-nav {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
 }
 
+.sidebar-active-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  border-radius: 10px;
+  background: var(--color-primary);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  opacity: 0;
+  transform: translateY(0px);
+  transition: transform 0.25s ease, height 0.25s ease, opacity 0.2s ease;
+  will-change: transform, height;
+  pointer-events: none;
+}
+
 .sidebar-link {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -1080,7 +1105,6 @@ button:focus-visible {
 }
 
 .sidebar-link.active {
-  background: var(--color-primary);
   color: #fff;
 }
 
@@ -1223,27 +1247,6 @@ button:focus-visible {
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
-.topbar-search {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  max-width: 460px;
-  background: #f1f5f9;
-  border-radius: 8px;
-  padding: 0.4rem 0.75rem;
-  color: #64748b;
-}
-
-.topbar-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 0.9rem;
-  color: #1e293b;
-}
-
 .topbar-right {
   display: flex;
   align-items: center;
@@ -1364,22 +1367,6 @@ button:focus-visible {
 
 .topbar-icon-btn:hover {
   background: #e2e8f0;
-  box-shadow: none;
-}
-
-.topbar-user {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: #334155;
-  font-size: 0.95rem;
-  font-weight: 600;
-  box-shadow: none;
-}
-
-.topbar-user:hover {
-  background: transparent;
   box-shadow: none;
 }
 
@@ -1524,10 +1511,6 @@ button:focus-visible {
     display: none;
   }
 
-  .dashboard-topbar .dropdown {
-    display: none;
-  }
-
   .dashboard-sidebar.open {
     transform: translateX(0);
   }
@@ -1546,14 +1529,6 @@ button:focus-visible {
 }
 
 @media (max-width: 575.98px) {
-  .topbar-search {
-    display: none;
-  }
-
-  .topbar-user span {
-    display: none;
-  }
-
   .dashboard-content {
     padding: 1rem;
   }
@@ -1563,6 +1538,74 @@ button:focus-visible {
 .inicio-loading {
   color: #64748b;
   padding: 1rem 0;
+}
+
+/* ---- Estados de carga y error (páginas) ---- */
+.skeleton-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  animation: fade-in 0.2s ease-out both;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+.skeleton-line-title {
+  height: 18px;
+  width: 35%;
+}
+
+.skeleton-line-short {
+  width: 60%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.error-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-block .retry-btn {
+  background: #fff;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  box-shadow: none;
+}
+
+.error-block .retry-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+  box-shadow: none;
+}
+
+.session-box {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .inicio-card {
@@ -2755,11 +2798,6 @@ input[type="checkbox"] {
 }
 
 /* ================= Responsive completo: móvil y tablet ================= */
-
-html,
-body {
-  overflow-x: clip;
-}
 
 @media (max-width: 991.98px) {
   .dashboard-sidebar {

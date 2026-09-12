@@ -28,12 +28,8 @@ import {
 import { getSummary, getProducts, getLowStockProducts, getMonthlyMovements } from "../services/api";
 import { getCssVar } from "../theme.js";
 import AnimatedNumber from "../components/AnimatedNumber";
-
-const formatCurrency = (value) =>
-  `L. ${Number(value || 0).toLocaleString("es-HN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+import { formatMoney } from "../utils/formatMoney";
+import { ErrorBlock } from "../components/PageStates";
 
 const STICKER_CATEGORIA = {
   Cuadernos: { icon: FaBook, color: "#f59e0b" },
@@ -114,7 +110,7 @@ function Inicio() {
     {
       label: "Valor del inventario",
       raw: summary ? Number(summary.valorInventario) : null,
-      fmt: (v) => formatCurrency(v),
+      fmt: (v) => formatMoney(v),
       icon: FaDollarSign,
       accent: "green",
     },
@@ -146,7 +142,12 @@ function Inicio() {
 
       {loading && <div className="inicio-loading">Cargando resumen...</div>}
 
-      {!loading && error && <div className="error-banner">{error}</div>}
+      {!loading && error && (
+        <ErrorBlock
+          message={`No se pudieron cargar los datos: ${error}`}
+          onRetry={load}
+        />
+      )}
 
       {!loading && !error && (
         <>
@@ -202,7 +203,7 @@ function Inicio() {
                             </td>
                             <td className="product-name">{p.nombre}</td>
                             <td>{p.cantidad}</td>
-                            <td>${Number(p.precio).toFixed(2)}</td>
+                            <td>{formatMoney(p.precio)}</td>
                             <td>{p.categoria || "Sin categoría"}</td>
                             <td>
                               <Link to="/productos" className="btn-secondary page-link-btn page-link-btn-primary">

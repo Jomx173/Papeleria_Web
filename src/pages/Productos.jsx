@@ -24,6 +24,7 @@ import ProductBulk from "../components/ProductBulk";
 import CategoryFilter from "../components/CategoryFilter";
 import StockAlert from "../components/StockAlert";
 import Modal from "../components/Modal";
+import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import { getProducts, createProduct, updateProduct, deleteProduct, adjustProductsStock } from "../services/api";
 import { exportProductosExcel, printProductos } from "../utils/exportProductos";
 
@@ -58,6 +59,7 @@ function Productos() {
   const moreRef = useRef(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!showMore) return undefined;
@@ -77,12 +79,14 @@ function Productos() {
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const loadProducts = useCallback(() => {
+    setLoading(true);
     getProducts()
       .then((data) => {
         setProducts(data);
         setError("");
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -284,7 +288,6 @@ function Productos() {
       </div>
 
       <div className="container">
-        {error && <div className="error-banner">{error}</div>}
         {toast && <div className="success-banner">{toast}</div>}
 
         <StockAlert key={stockStamp} />
@@ -470,38 +473,49 @@ function Productos() {
         </Modal>
       )}
 
-      <ProductList
-        products={paginatedProducts}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        selectedIds={selectedIds}
-        onToggleSelect={(id) =>
-          setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-        }
-        selectAllChecked={allOnPageSelected}
-        onSelectAll={handleSelectAll}
-      />
+      {loading ? (
+        <LoadingBlock label="Cargando productos" />
+      ) : error ? (
+        <ErrorBlock
+          message={`No se pudieron cargar los productos: ${error}`}
+          onRetry={loadProducts}
+        />
+      ) : (
+        <>
+          <ProductList
+            products={paginatedProducts}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            selectedIds={selectedIds}
+            onToggleSelect={(id) =>
+              setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+            }
+            selectAllChecked={allOnPageSelected}
+            onSelectAll={handleSelectAll}
+          />
 
-      {filteredProducts.length > 0 && (
-        <div className="pagination-bar">
-          <button
-            className="btn-secondary"
-            onClick={() => setPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </button>
-          <span>
-            Página {currentPage} de {totalPages}
-          </span>
-          <button
-            className="btn-secondary"
-            onClick={() => setPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-          </button>
-        </div>
+          {filteredProducts.length > 0 && (
+            <div className="pagination-bar">
+              <button
+                className="btn-secondary"
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+              <span>
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                className="btn-secondary"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
       )}
       </div>
     </>

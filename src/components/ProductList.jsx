@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FaEllipsisV, FaEye, FaPencilAlt, FaTrash } from "react-icons/fa";
 import { getCategoryColor } from "../utils/categoryColors";
+import { formatMoney } from "../utils/formatMoney";
 import Modal from "./Modal";
 
 const ESTADO_BADGES = {
@@ -92,7 +93,7 @@ function ProductList({
                     {product.stockBajo && <span title="Stock bajo">⚠️</span>} {product.nombre}
                   </td>
                   <td className={product.stockBajo ? "cantidad-baja" : ""}>{product.cantidad}</td>
-                  <td>${Number(product.precio).toFixed(2)}</td>
+                  <td>{formatMoney(product.precio)}</td>
                   <td>
                     <span className={`estado-badge ${badge.cls}`}>{badge.label}</span>
                   </td>
@@ -184,7 +185,7 @@ function ProductList({
               </div>
               <div className="detail-field">
                 <span className="detail-label">Precio</span>
-                <span className="detail-value">${Number(detail.precio).toFixed(2)}</span>
+                <span className="detail-value">{formatMoney(detail.precio)}</span>
               </div>
               <div className="detail-field detail-field-wide">
                 <span className="detail-label">Fecha de creación</span>

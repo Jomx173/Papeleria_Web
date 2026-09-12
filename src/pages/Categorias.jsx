@@ -14,6 +14,7 @@ import {
   FaStickyNote,
 } from "react-icons/fa";
 import Modal from "../components/Modal";
+import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import {
   getCategories,
   createCategory,
@@ -35,14 +36,17 @@ function Categorias() {
   const [formName, setFormName] = useState("");
   const [formError, setFormError] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
+    setLoading(true);
     getCategories()
       .then((data) => {
         setCategories(data);
         setError("");
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const loadSummary = useCallback(() => {
@@ -51,10 +55,14 @@ function Categorias() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     load();
     loadSummary();
   }, [load, loadSummary]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const openNew = () => {
     setEditing(null);
@@ -91,8 +99,7 @@ function Categorias() {
         await createCategory({ nombre });
       }
       handleCancel();
-      load();
-      loadSummary();
+      reload();
     } catch (err) {
       setFormError(err.message);
     }
@@ -107,8 +114,7 @@ function Categorias() {
     if (!window.confirm(message)) return;
     try {
       await deleteCategory(category.id);
-      load();
-      loadSummary();
+      reload();
     } catch (err) {
       setError(err.message);
     }
@@ -173,7 +179,6 @@ function Categorias() {
       </div>
 
       <div className="container">
-        {error && <div className="error-banner">{error}</div>}
 
       <div className="row g-3 mb-3">
         {stats.map((stat, i) => (
@@ -244,7 +249,14 @@ function Categorias() {
         </Modal>
       )}
 
-      {visibleCategories.length === 0 ? (
+      {loading ? (
+        <LoadingBlock label="Cargando categorías" />
+      ) : error ? (
+        <ErrorBlock
+          message={`No se pudieron cargar las categorías: ${error}`}
+          onRetry={reload}
+        />
+      ) : visibleCategories.length === 0 ? (
         <div className="page-card empty-card">
           <p className="page-card-title">No hay categorías registradas</p>
         </div>
