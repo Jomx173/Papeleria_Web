@@ -3680,10 +3680,10 @@ input[type="checkbox"]:active {
     align-items: center;
     justify-content: space-around;
     position: fixed;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    margin: 0 auto;
     width: calc(100% - 28px);
     max-width: 470px;
     height: 64px;
