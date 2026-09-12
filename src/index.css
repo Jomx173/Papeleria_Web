@@ -3625,29 +3625,29 @@ input[type="checkbox"]:active {
     justify-content: space-around;
     position: fixed;
     left: 50%;
+    right: auto;
     transform: translateX(-50%);
-    bottom: calc(13px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     width: calc(100% - 28px);
     max-width: 470px;
-    height: 66px;
-    padding: 2px 6px;
+    height: 64px;
+    padding: 2px 8px;
     background: #ffffff;
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    border-radius: 26px;
+    border: none;
+    border-radius: 28px;
     box-shadow:
-      0 8px 24px rgba(15, 23, 42, 0.12),
-      0 2px 6px rgba(15, 23, 42, 0.06);
+      0 8px 22px rgba(15, 23, 42, 0.1),
+      0 2px 6px rgba(15, 23, 42, 0.05);
     z-index: 1060;
   }
 
   .bottom-nav-link {
     position: relative;
     flex: 1 1 0;
-    height: 62px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
     color: #94a3b8;
     transition: color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
@@ -3660,24 +3660,19 @@ input[type="checkbox"]:active {
     transition: transform 0.22s ease, color 0.2s ease;
   }
 
-  .bottom-nav-link.active {
-    color: var(--color-primary);
-  }
-
   .bottom-nav-link::before {
     content: "";
     position: absolute;
-    top: -11px;
+    top: -12px;
     left: 50%;
-    transform: translate(-50%, 6px) scale(0.94);
-    width: 50px;
-    height: 50px;
+    transform: translate(-50%, 6px) scale(0.92);
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: #ffffff;
     box-shadow:
-      0 4px 14px rgba(15, 23, 42, 0.16),
-      0 0 0 1px rgba(226, 232, 240, 0.9),
-      0 0 0 6px rgba(79, 70, 229, 0.1);
+      0 4px 12px rgba(15, 23, 42, 0.14),
+      0 0 0 9px rgba(79, 70, 229, 0.07);
     opacity: 0;
     pointer-events: none;
     transition:
@@ -3692,6 +3687,7 @@ input[type="checkbox"]:active {
 
   .bottom-nav-link.active svg {
     transform: translateY(-1px);
+    color: var(--color-primary);
   }
 
   .bottom-nav-link:active svg {
@@ -3699,16 +3695,26 @@ input[type="checkbox"]:active {
   }
 
   .dashboard-content {
-    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   }
 }
 
 @media (max-width: 359.98px) {
   .bottom-nav {
     padding: 2px 4px;
+    height: 62px;
+  }
+
+  .bottom-nav-link {
+    height: 58px;
   }
 
   .bottom-nav-link svg {
     font-size: 20px;
+  }
+
+  .bottom-nav-link::before {
+    width: 46px;
+    height: 46px;
   }
 }
