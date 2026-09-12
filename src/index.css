@@ -3627,6 +3627,11 @@ input[type="checkbox"]:active {
 @media (max-width: 991.98px) {
   .bottom-nav {
     --nav-notch-x: 0px;
+    --nav-pad-top: 2px;
+    --nav-link-h: 60px;
+    --nav-bubble-top: -10px;
+    --nav-bubble-size: 48px;
+    --nav-icon-y-offset: 0px;
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -3698,16 +3703,23 @@ input[type="checkbox"]:active {
   .bottom-nav-link svg {
     font-size: 22px;
     position: relative;
-    transition: transform 0.22s ease, color 0.2s ease;
+    transform: translateY(var(--nav-icon-y-offset));
+    transition: color 0.2s ease;
+  }
+
+  .bottom-nav-link.active {
+    --nav-icon-y-offset: calc(
+      var(--nav-bubble-top) + var(--nav-bubble-size) / 2 -
+        var(--nav-pad-top) - var(--nav-link-h) / 2
+    );
   }
 
   .bottom-nav-link.active svg {
-    transform: translateY(-1px);
     color: var(--color-primary);
   }
 
   .bottom-nav-link:active svg {
-    transform: scale(0.94);
+    transform: translateY(var(--nav-icon-y-offset)) scale(0.94);
   }
 
   .dashboard-content {
@@ -3717,6 +3729,8 @@ input[type="checkbox"]:active {
 
 @media (max-width: 359.98px) {
   .bottom-nav {
+    --nav-link-h: 58px;
+    --nav-bubble-size: 46px;
     padding: 2px 4px;
     height: 62px;
   }
