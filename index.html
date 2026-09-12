@@ -7,6 +7,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Sistema de gestión de inventario para papelería" />
     <meta name="theme-color" content="#4F46E5" />
+    <script>
+      (function () {
+        try {
+          var defP = "#4f46e5";
+          var defS = "#ec4899";
+          var p = localStorage.getItem("colorPrincipal");
+          var s = localStorage.getItem("colorSecundario");
+          var ok = function (v) {
+            if (typeof v !== "string") return null;
+            var h = v.trim().replace(/^#/, "");
+            if (!/^[0-9a-fA-F]{3,6}$/.test(h)) return null;
+            if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+            return /^[0-9a-fA-F]{6}$/.test(h) ? "#" + h.toLowerCase() : null;
+          };
+          p = ok(p) || defP;
+          s = ok(s) || defS;
+          var x = p.replace("#", "");
+          var toHex = function (n) {
+            return Math.round(n * 0.85).toString(16).padStart(2, "0");
+          };
+          var dark = "#" + toHex(parseInt(x.slice(0, 2), 16)) + toHex(parseInt(x.slice(2, 4), 16)) + toHex(parseInt(x.slice(4, 6), 16));
+          var st = document.documentElement.style;
+          st.setProperty("--color-primary", p);
+          st.setProperty("--color-primary-dark", dark);
+          st.setProperty("--color-secondary", s);
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", p);
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap" rel="stylesheet" />

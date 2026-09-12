@@ -9,8 +9,9 @@ import {
   FaCog,
   FaStar,
   FaPaperclip,
+  FaCheck,
 } from "react-icons/fa";
-import { aplicarColores, getColorInicial } from "../theme.js";
+import { aplicarColores, getColorInicial, normalizarHex, darkenHex } from "../theme.js";
 import { exportBackup, restoreBackup } from "../services/api";
 
 const TABS = [
@@ -47,6 +48,7 @@ function Configuracion() {
   const coloresIniciales = getColorInicial();
   const [colorPrincipal, setColorPrincipal] = useState(coloresIniciales.principal);
   const [colorSecundario, setColorSecundario] = useState(coloresIniciales.secundario);
+  const [coloresGuardados, setColoresGuardados] = useState(coloresIniciales);
   const [aviso, setAviso] = useState("");
   const [avisoError, setAvisoError] = useState("");
   const fileInputRef = useRef(null);
@@ -102,6 +104,10 @@ function Configuracion() {
   const handleCancel = () => {
     setAviso("");
     setAvisoError("");
+    if (activeTab === "colores") {
+      setColorPrincipal(coloresGuardados.principal);
+      setColorSecundario(coloresGuardados.secundario);
+    }
   };
 
   const handleSave = () => {
@@ -113,7 +119,18 @@ function Configuracion() {
     }
 
     if (activeTab === "colores") {
-      aplicarColores(colorPrincipal, colorSecundario);
+      const p = normalizarHex(colorPrincipal);
+      const s = normalizarHex(colorSecundario);
+      if (!p || !s) {
+        setAvisoError(
+          `Ingresa colores HEX válidos (#RGB o #RRGGBB). ${!p ? "Color principal inválido: " + colorPrincipal : ""}${!s ? " Color secundario inválido: " + colorSecundario : ""}`
+        );
+        return;
+      }
+      aplicarColores(p, s);
+      setColoresGuardados({ principal: p, secundario: s });
+      setColorPrincipal(p);
+      setColorSecundario(s);
       setAviso("Cambios guardados.");
       return;
     }
@@ -148,6 +165,11 @@ function Configuracion() {
   };
 
   const renderSection = () => {
+    const esColores = activeTab === "colores";
+    const pNormal = esColores ? normalizarHex(colorPrincipal) || coloresGuardados.principal : null;
+    const sNormal = esColores ? normalizarHex(colorSecundario) || coloresGuardados.secundario : null;
+    const pInvalid = esColores && colorPrincipal !== "" && !normalizarHex(colorPrincipal);
+    const sInvalid = esColores && colorSecundario !== "" && !normalizarHex(colorSecundario);
     switch (activeTab) {
       case "preferencias":
         return (
@@ -199,31 +221,56 @@ function Configuracion() {
       case "colores":
         return (
           <div>
-            <p className="report-hint">Personaliza los colores de la aplicación (solo vista previa).</p>
+            <p className="report-hint">Personaliza los colores de toda la aplicación. El cambio se aplica al guardar.</p>
+            <div
+              className="theme-preview"
+              style={{
+                "--color-primary": pNormal,
+                "--color-primary-dark": darkenHex(pNormal),
+                "--color-secondary": sNormal,
+              }}
+            >
+              <div className="theme-preview-row">
+                <button type="button" className="theme-preview-btn">
+                  Botón principal
+                </button>
+                <button type="button" className="theme-preview-btn-outline">
+                  Botón contorno
+                </button>
+                <span className="theme-preview-link">Opción</span>
+                <span className="theme-preview-link active">
+                  <FaCheck /> Elemento activo
+                </span>
+              </div>
+              <div className="theme-preview-card">
+                <span className="preview-card-icon">
+                  <FaPalette />
+                </span>
+                <div>
+                  <span className="preview-card-label">Tarjeta con acento</span>
+                  <span className="preview-card-value">$1,234</span>
+                </div>
+              </div>
+              <span className="theme-preview-tag">
+                <span className="color-dot" /> Acento secundario
+              </span>
+            </div>
             <div className="color-fields">
               <label className="color-field">
                 Color principal
-                <span className="color-input-wrap">
-                  <input type="color" value={colorPrincipal} onChange={(e) => setColorPrincipal(e.target.value)} />
-                  <span>{colorPrincipal}</span>
+                <span className={`color-input-wrap${pInvalid ? " hex-invalid" : ""}`}>
+                  <input type="color" value={pNormal} onChange={(e) => setColorPrincipal(e.target.value)} aria-label="Color principal" />
+                  <input type="text" className="color-hex-input" value={colorPrincipal} onChange={(e) => setColorPrincipal(e.target.value)} maxLength="7" aria-label="Color principal HEX" />
                 </span>
               </label>
               <label className="color-field">
                 Color secundario
-                <span className="color-input-wrap">
-                  <input type="color" value={colorSecundario} onChange={(e) => setColorSecundario(e.target.value)} />
-                  <span>{colorSecundario}</span>
+                <span className={`color-input-wrap${sInvalid ? " hex-invalid" : ""}`}>
+                  <input type="color" value={sNormal} onChange={(e) => setColorSecundario(e.target.value)} aria-label="Color secundario" />
+                  <input type="text" className="color-hex-input" value={colorSecundario} onChange={(e) => setColorSecundario(e.target.value)} maxLength="7" aria-label="Color secundario HEX" />
                 </span>
               </label>
             </div>
-            <button
-              type="button"
-              className="color-preview"
-              style={{ background: colorPrincipal, borderColor: colorSecundario }}
-              onClick={() => {}}
-            >
-              Vista previa <span className="color-dot" style={{ background: colorSecundario }} />
-            </button>
           </div>
         );
       default:
