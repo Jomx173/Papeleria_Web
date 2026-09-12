@@ -111,7 +111,7 @@ function Reportes() {
   const stats = [
     { label: "Total de productos", raw: summary ? Number(summary.totalProductos) : null, fmt: (v) => String(Math.round(v)), icon: <FaBoxOpen />, cls: "violet" },
     { label: "Total de unidades", raw: summary ? totalUnidades : null, fmt: (v) => String(Math.round(v)), icon: <FaBoxes />, cls: "blue" },
-    { label: "Valor del inventario", raw: summary ? Number(summary.valorInventario) : null, fmt: (v) => fmtMoney(v), icon: <FaDollarSign />, cls: "green" },
+    { label: "Valor del inventario", raw: summary ? Number(summary.valorInventario) : null, fmt: (v) => formatMoney(v), icon: <FaDollarSign />, cls: "green" },
     { label: "Productos con stock bajo", raw: summary ? Number(summary.stockBajo) : null, fmt: (v) => String(Math.round(v)), icon: <FaExclamationTriangle />, cls: "orange" },
   ];
 
@@ -216,7 +216,7 @@ return (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={valorData} layout="vertical" margin={{ left: 20 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis type="number" stroke="#64748b" fontSize={11} />
+                          <XAxis type="number" stroke="#64748b" fontSize={11} tickFormatter={formatMoney} />
                           <YAxis type="category" dataKey="name" width={130} stroke="#64748b" fontSize={11} />
                           <Tooltip formatter={(value) => formatMoney(value)} />
                           <Legend />
