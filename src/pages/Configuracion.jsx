@@ -9,7 +9,6 @@ import {
   FaCog,
   FaStar,
   FaPaperclip,
-  FaSignOutAlt,
 } from "react-icons/fa";
 import { aplicarColores, getColorInicial } from "../theme.js";
 import { exportBackup, restoreBackup } from "../services/api";
@@ -148,26 +147,6 @@ function Configuracion() {
     }
   };
 
-  const handleLogout = () => {
-    const confirmar = window.confirm(
-      "¿Deseas cerrar la sesión? Se restablecerán las preferencias y ajustes guardados en este dispositivo."
-    );
-    if (!confirmar) return;
-    try {
-      [
-        "colorPrincipal",
-        "colorSecundario",
-        "umbralStockBajo",
-        "notifStockBajo",
-        "notifAgotados",
-        "sidebar_colapsado",
-      ].forEach((k) => localStorage.removeItem(k));
-    } catch {
-      // sin localStorage no hay nada que limpiar
-    }
-    window.location.href = "/";
-  };
-
   const renderSection = () => {
     switch (activeTab) {
       case "preferencias":
@@ -180,12 +159,6 @@ function Configuracion() {
                 Se alertará cuando la cantidad de un producto sea menor o igual a este valor.
               </small>
             </label>
-            <div className="session-box">
-              <p className="report-hint">Controla la sesión de la aplicación en este dispositivo.</p>
-              <button type="button" className="btn-danger" onClick={handleLogout}>
-                <FaSignOutAlt /> Cerrar sesión
-              </button>
-            </div>
           </form>
         );
       case "respaldo":

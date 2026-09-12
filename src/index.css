@@ -1640,12 +1640,6 @@ button:focus-visible {
   box-shadow: none;
 }
 
-.session-box {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
-}
-
 .inicio-card {
   display: flex;
   align-items: center;
