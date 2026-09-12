@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { getLowStockProducts } from "../services/api";
 import PageBackground from "../components/PageBackground";
@@ -36,6 +36,7 @@ function DashboardLayout() {
   const notifRef = useRef(null);
   const navRef = useRef(null);
   const indicatorRef = useRef(null);
+  const bottomNavRef = useRef(null);
 
   const updateSidebarIndicator = useCallback(() => {
     const nav = navRef.current;
@@ -59,6 +60,24 @@ function DashboardLayout() {
     window.addEventListener("resize", updateSidebarIndicator);
     return () => window.removeEventListener("resize", updateSidebarIndicator);
   }, [updateSidebarIndicator]);
+
+  const updateBottomNavNotch = useCallback(() => {
+    const bar = bottomNavRef.current;
+    if (!bar) return;
+    const active = bar.querySelector(".bottom-nav-link.active");
+    if (!active) return;
+    const center = active.offsetLeft + active.offsetWidth / 2;
+    bar.style.setProperty("--nav-notch-x", `${center}px`);
+  }, []);
+
+  useLayoutEffect(() => {
+    updateBottomNavNotch();
+  }, [location.pathname, updateBottomNavNotch]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateBottomNavNotch);
+    return () => window.removeEventListener("resize", updateBottomNavNotch);
+  }, [updateBottomNavNotch]);
 
   const toggleSidebarColapsado = () => {
     setSidebarColapsado((prev) => {
@@ -239,7 +258,9 @@ function DashboardLayout() {
         </main>
       </div>
 
-      <nav className="bottom-nav" aria-label="Navegación móvil">
+      <nav ref={bottomNavRef} className="bottom-nav" aria-label="Navegación móvil">
+        <div className="bottom-nav-pill" aria-hidden="true" />
+        <span className="bottom-nav-bubble" aria-hidden="true" />
         {mobileNavItems.map((item) => (
           <NavLink
             key={item.to}
