@@ -210,6 +210,17 @@ function DashboardLayout() {
       <div className="dashboard-main">
         <PageBackground />
         <header className="dashboard-topbar">
+          <div className="topbar-left">
+            <div className="topbar-brand">
+              <span className="brand-cup" aria-hidden="true">
+                <FaPencilAlt className="bpc p1" />
+                <FaPencilAlt className="bpc p2" />
+                <FaPencilAlt className="bpc p3" />
+                <FaPencilAlt className="bpc p4" />
+              </span>
+              <span className="brand-text">PAPELERÍA</span>
+            </div>
+          </div>
           <div className="topbar-right">
             <div className="notif-wrapper" ref={notifRef}>
               <button
