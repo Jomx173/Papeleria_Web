@@ -134,6 +134,8 @@ function DashboardLayout() {
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  const pageTitle = navItems.find((item) => item.to === location.pathname)?.label ?? "Inicio";
+
   return (
     <div className={`dashboard-layout${sidebarColapsado ? " sidebar-colapsado" : ""}`}>
       <aside className={`dashboard-sidebar ${sidebarOpen ? "open" : ""}${sidebarColapsado ? " collapsed" : ""}`}>
@@ -210,13 +212,17 @@ function DashboardLayout() {
       <div className="dashboard-main">
         <PageBackground />
         <header className="dashboard-topbar">
-          <button
-            className="topbar-menu-btn"
-            onClick={() => setSidebarOpen((open) => !open)}
-            aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
-          >
-            {sidebarOpen ? <FaChevronLeft /> : <FaChevronRight />}
-          </button>
+          <div className="topbar-brand">
+            <span className="brand-cup" aria-hidden="true">
+              <FaPencilAlt className="bpc p1" />
+              <FaPencilAlt className="bpc p2" />
+              <FaPencilAlt className="bpc p3" />
+              <FaPencilAlt className="bpc p4" />
+            </span>
+            <span className="topbar-brand-text">PAPELERÍA</span>
+          </div>
+
+          <span className="topbar-title">{pageTitle}</span>
 
           <div className="topbar-right">
             <div className="notif-wrapper" ref={notifRef}>

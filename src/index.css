@@ -1221,9 +1221,40 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 1rem;
+  height: 64px;
   background: #fff;
   border-bottom: 1px solid #e2e8f0;
-  padding: 0.7rem 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: 0 24px;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.topbar-brand-text {
+  color: #0f2447;
+  font-weight: 800;
+  font-size: 1.02rem;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.topbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #64748b;
+  font-size: 0.93rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-transform: capitalize;
+  pointer-events: none;
 }
 
 .topbar-menu-btn {
@@ -1256,16 +1287,23 @@ button:focus-visible {
 
 .topbar-icon-btn {
   background: #f1f5f9;
-  color: #475569;
-  width: 40px;
-  height: 40px;
+  color: #334155;
+  width: 42px;
+  height: 42px;
   padding: 0;
   align-items: center;
   justify-content: center;
+  border: 1px solid #e2e8f0;
   border-radius: 50%;
-  font-size: 1rem;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  font-size: 1.05rem;
+  cursor: pointer;
   position: relative;
+}
+
+.topbar-icon-btn:hover {
+  background: #e2e8f0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .notif-wrapper {
@@ -1363,11 +1401,6 @@ button:focus-visible {
   padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
   margin: 0;
-}
-
-.topbar-icon-btn:hover {
-  background: #e2e8f0;
-  box-shadow: none;
 }
 
 .dashboard-content {
@@ -1524,6 +1557,10 @@ button:focus-visible {
   }
 
   .topbar-menu-btn {
+    display: none;
+  }
+
+  .topbar-title {
     display: none;
   }
 
@@ -2843,15 +2880,33 @@ input[type="checkbox"] {
   }
 
   .dashboard-topbar {
-    padding: 0.55rem 0.8rem;
+    height: 60px;
+    padding: 0 16px;
     gap: 0.6rem;
+  }
+
+  .topbar-brand {
+    gap: 0.5rem;
+  }
+
+  .topbar-brand-text {
+    font-size: 0.92rem;
+  }
+
+  .topbar-brand .brand-cup {
+    width: 30px;
+    height: 26px;
+  }
+
+  .topbar-brand .brand-cup .bpc {
+    font-size: 1.2rem;
+    bottom: 5px;
   }
 
   .topbar-right {
     gap: 0.5rem;
   }
 
-  .topbar-menu-btn,
   .topbar-icon-btn {
     width: 38px;
     height: 38px;
