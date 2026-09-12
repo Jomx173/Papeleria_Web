@@ -1524,7 +1524,15 @@ button:focus-visible {
   }
 
   .topbar-menu-btn {
-    display: flex;
+    display: none;
+  }
+
+  .dashboard-sidebar {
+    display: none;
+  }
+
+  .sidebar-backdrop {
+    display: none;
   }
 }
 
