@@ -3626,11 +3626,11 @@ input[type="checkbox"]:active {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    width: calc(100% - 32px);
+    bottom: calc(13px + env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 28px);
     max-width: 470px;
     height: 66px;
-    padding: 2px 8px;
+    padding: 2px 6px;
     background: #ffffff;
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 26px;
@@ -3700,5 +3700,15 @@ input[type="checkbox"]:active {
 
   .dashboard-content {
     padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 359.98px) {
+  .bottom-nav {
+    padding: 2px 4px;
+  }
+
+  .bottom-nav-link svg {
+    font-size: 20px;
   }
 }

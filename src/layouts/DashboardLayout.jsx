@@ -107,6 +107,7 @@ function DashboardLayout() {
   const mobileNavItems = [
     { to: "/", label: "Inicio", icon: FaHome },
     { to: "/productos", label: "Productos", icon: FaBoxOpen },
+    { to: "/categorias", label: "Categorías", icon: FaTags },
     { to: "/movimientos", label: "Movimientos", icon: FaExchangeAlt },
     { to: "/reportes", label: "Reportes", icon: FaChartBar },
     { to: "/configuracion", label: "Configuración", icon: FaCog },
