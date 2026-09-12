@@ -104,6 +104,14 @@ function DashboardLayout() {
     { to: "/configuracion", label: "Configuración", icon: FaCog },
   ];
 
+  const mobileNavItems = [
+    { to: "/", label: "Inicio", icon: FaHome },
+    { to: "/productos", label: "Productos", icon: FaBoxOpen },
+    { to: "/movimientos", label: "Movimientos", icon: FaExchangeAlt },
+    { to: "/reportes", label: "Reportes", icon: FaChartBar },
+    { to: "/configuracion", label: "Configuración", icon: FaCog },
+  ];
+
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
@@ -229,6 +237,22 @@ function DashboardLayout() {
           </div>
         </main>
       </div>
+
+      <nav className="bottom-nav" aria-label="Navegación móvil">
+        {mobileNavItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            className="bottom-nav-link"
+            onClick={closeSidebar}
+            aria-label={item.label}
+            data-center={item.to === "/movimientos" ? true : undefined}
+          >
+            <item.icon />
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
