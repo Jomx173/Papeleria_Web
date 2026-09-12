@@ -3,7 +3,7 @@ import { FaRobot, FaTimes, FaTrash } from "react-icons/fa";
 import AssistantMessage from "./AssistantMessage";
 import ConfirmationCard from "./ConfirmationCard";
 import AssistantInput from "./AssistantInput";
-import { creaoUpsertProduct } from "../services/api";
+import { creaoUpsertProduct, searchProducts, createMovement } from "../services/api";
 import { parseNaturalLanguage } from "../utils/parseNaturalLanguage";
 
 function InventoryAssistant() {
@@ -93,26 +93,35 @@ function InventoryAssistant() {
       const exactMatch = resultados.find(p => p.nombre.toLowerCase() === parsed.producto.toLowerCase());
       const sugerido = exactMatch || resultados[0] || null;
       
+      // Determinar acción basada en el tipo detectado (entrada/salida)
+      const esSalida = parsed.tipo === "salida";
+      const accion = sugerido ? (esSalida ? "salida" : "entrada") : "crear";
+      
       let preview = {
-        accion: sugerido ? "entrada" : "crear",
+        accion,
         texto_original: parsed.originalText,
         interpretacion: {
           producto_buscar: parsed.producto,
           cantidad: parsed.cantidad,
           precio: parsed.precio,
-          categoria_inferida: null
+          categoria_inferida: null,
+          tipo: parsed.tipo
         },
         productos_encontrados: resultados,
         sugerido: sugerido ? {
           ...sugerido,
           existencia_actual: sugerido.cantidad,
-          nueva_existencia: sugerido.cantidad + parsed.cantidad,
+          nueva_existencia: esSalida 
+            ? Math.max(0, sugerido.cantidad - parsed.cantidad)
+            : sugerido.cantidad + parsed.cantidad,
           precio_actual: sugerido.precio,
           precio_nuevo: parsed.precio
         } : null,
         requiere_confirmacion: true,
         mensaje: sugerido
-          ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`
+          ? esSalida
+            ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.`
+            : `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`
           : `No existe "${parsed.producto}". Se crearía como producto nuevo con ${parsed.cantidad} unidades.`
       };
       
@@ -157,20 +166,36 @@ function InventoryAssistant() {
     setPreview(null);
 
     try {
-      const payload = {
-        nombre: lastPreview.sugerido?.nombre || lastPreview.interpretacion?.producto_buscar,
-        cantidad: lastPreview.interpretacion?.cantidad,
-        precio: lastPreview.interpretacion?.precio || lastPreview.sugerido?.precio,
-        categoria_id: lastPreview.sugerido?.categoria_id || lastPreview.interpretacion?.categoria_inferida,
-        confirmado: true,
-        actualizar_precio: options.actualizar_precio === true,
-      };
-
-      const response = await creaoUpsertProduct(payload);
+      const interpretacion = lastPreview.interpretacion;
+      const esSalida = interpretacion.tipo === "salida";
+      
+      let response;
+      
+      if (esSalida) {
+        // Para salidas, usar el endpoint de movements
+        const payload = {
+          producto_id: lastPreview.sugerido?.id,
+          tipo: "salida",
+          cantidad: interpretacion.cantidad,
+          motivo: `Venta registrada por asistente: ${interpretacion.texto_original}`
+        };
+        response = await createMovement(payload);
+      } else {
+        // Para entradas y creación, usar el endpoint creao
+        const payload = {
+          nombre: lastPreview.sugerido?.nombre || interpretacion.producto_buscar,
+          cantidad: interpretacion.cantidad,
+          precio: interpretacion.precio || lastPreview.sugerido?.precio,
+          categoria_id: lastPreview.sugerido?.categoria_id || interpretacion.categoria_inferida,
+          confirmado: true,
+          actualizar_precio: options.actualizar_precio === true,
+        };
+        response = await creaoUpsertProduct(payload);
+      }
       
       if (response.ok) {
         addMessage(
-          `✅ ${response.mensaje}`,
+          `✅ ${response.mensaje || "Operación completada"}`,
           false
         );
         

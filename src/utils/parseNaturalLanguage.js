@@ -9,8 +9,19 @@ export const parseNaturalLanguage = (text) => {
     cantidad: null,
     precio: null,
     categoria: null,
+    tipo: "entrada",
     originalText: text
   };
+  
+  // Detectar si es salida (venta) o entrada
+  const salidaVerbs = /(?:vendí|vendi|vendió|vendio|salida|salieron|se vendi|vendí|vendí)/;
+  const entradaVerbs = /(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen)/;
+  
+  if (salidaVerbs.test(lower)) {
+    result.tipo = "salida";
+  } else if (entradaVerbs.test(lower)) {
+    result.tipo = "entrada";
+  }
   
   // Extraer cantidad: números enteros seguidos de unidades o solo números al inicio
   const cantidadMatch = lower.match(/\b(\d+)\s*(?:unidades?|piezas?|pzas?|items?|cuadernos?|lapices?|lapiz|boligrafos?|boligrafo|bolis?|borradores?|marcadores?|cuadernos?|libretas?|resmas?|hojas?|plumas?|bolis?)\b/);
