@@ -1564,6 +1564,32 @@ button:focus-visible {
     display: none;
   }
 
+  .reportes-stats .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 154px;
+    gap: 0.45rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .reportes-stats .stat-card > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.3rem;
+  }
+
+  .reportes-stats .stat-label {
+    line-height: 1.45;
+    min-height: calc(3 * 1.45em);
+  }
+
+  .reportes-stats .stat-value {
+    line-height: 1.2;
+  }
+
   .dashboard-sidebar {
     display: none;
   }
@@ -1942,7 +1968,18 @@ button:focus-visible {
   font-weight: 700;
   color: #0f172a;
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+/* ---- Tarjetas KPI de Reportes: dimensiones iguales ---- */
+.reportes-stats .stat-card {
+  height: 100%;
+}
+
+.reportes-stats .stat-card > div,
+.reportes-stats .stat-label,
+.reportes-stats .stat-value {
+  overflow-wrap: break-word;
 }
 
 .page-card-title {
@@ -3120,11 +3157,6 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 359.98px) {
-  .reportes-stats > .col-6 {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-
   .banner-note {
     max-width: 48%;
   }
