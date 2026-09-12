@@ -4,6 +4,7 @@ import AssistantMessage from "./AssistantMessage";
 import ConfirmationCard from "./ConfirmationCard";
 import AssistantInput from "./AssistantInput";
 import { creaoUpsertProduct } from "../services/api";
+import { parseNaturalLanguage } from "../utils/parseNaturalLanguage";
 
 function InventoryAssistant() {
   const [isOpen, setIsOpen] = useState(false);
