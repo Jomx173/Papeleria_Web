@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { getLowStockProducts } from "../services/api";
 import PageBackground from "../components/PageBackground";
+import InventoryAssistant from "../components/InventoryAssistant";
 import {
   FaHome,
   FaBoxOpen,
@@ -277,6 +278,9 @@ function DashboardLayout() {
           </NavLink>
         ))}
       </nav>
+
+      <InventoryAssistant />
+
     </div>
   );
 }

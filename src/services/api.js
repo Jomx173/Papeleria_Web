@@ -37,6 +37,10 @@ export const adjustProductsStock = (payload) =>
 
 export const getLowStockProducts = () => request("/products/alertas");
 
+export const searchProducts = (q, limit = 10) => request(`/products/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+
+export const creaoUpsertProduct = (data) => request("/products/creao/producto", { method: "POST", body: JSON.stringify(data) });
+
 export const getCategories = () => request("/categories");
 
 export const createCategory = (data) =>
