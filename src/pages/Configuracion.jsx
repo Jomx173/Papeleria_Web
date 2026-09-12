@@ -11,6 +11,7 @@ import {
   FaPaperclip,
   FaCheck,
 } from "react-icons/fa";
+import OperationResultModal from "../components/OperationResultModal";
 import { aplicarColores, getColorInicial, normalizarHex, darkenHex } from "../theme.js";
 import { exportBackup, restoreBackup } from "../services/api";
 
@@ -49,18 +50,19 @@ function Configuracion() {
   const [colorPrincipal, setColorPrincipal] = useState(coloresIniciales.principal);
   const [colorSecundario, setColorSecundario] = useState(coloresIniciales.secundario);
   const [coloresGuardados, setColoresGuardados] = useState(coloresIniciales);
-  const [aviso, setAviso] = useState("");
-  const [avisoError, setAvisoError] = useState("");
+  const [opResult, setOpResult] = useState(null);
+
+  const showOpResult = (type, title, message) => {
+    setOpResult({ type, title, message });
+  };
   const fileInputRef = useRef(null);
 
   const handleExport = async () => {
     try {
-      setAviso("");
-      setAvisoError("");
       const resp = await exportBackup();
-      setAviso(`Respaldo exportado: ${resp.nombreArchivo}`);
+      showOpResult("success", "Respaldo exportado", `Respaldo exportado: ${resp.nombreArchivo}`);
     } catch (err) {
-      setAvisoError(`Error al exportar el respaldo: ${err.message}`);
+      showOpResult("error", "Error", `Error al exportar el respaldo: ${err.message}`);
     }
   };
 
@@ -73,9 +75,6 @@ function Configuracion() {
       "Esto reemplazará TODOS los datos actuales (productos, categorías, movimientos) con los del archivo. Esta acción no se puede deshacer. ¿Continuar?"
     );
     if (!confirmar) return;
-
-    setAviso("");
-    setAvisoError("");
 
     try {
       const texto = await new Promise((resolve, reject) => {
@@ -93,17 +92,17 @@ function Configuracion() {
       }
 
       const resumen = await restoreBackup(json);
-      setAviso(
+      showOpResult(
+        "success",
+        "Respaldo restaurado",
         `Respaldo restaurado: ${resumen.categorias} categorías, ${resumen.productos} productos, ${resumen.movimientos} movimientos`
       );
     } catch (err) {
-      setAvisoError(`Error al restaurar el respaldo: ${err.message}`);
+      showOpResult("error", "Error", `Error al restaurar el respaldo: ${err.message}`);
     }
   };
 
   const handleCancel = () => {
-    setAviso("");
-    setAvisoError("");
     if (activeTab === "colores") {
       setColorPrincipal(coloresGuardados.principal);
       setColorSecundario(coloresGuardados.secundario);
@@ -111,9 +110,6 @@ function Configuracion() {
   };
 
   const handleSave = () => {
-    setAviso("");
-    setAvisoError("");
-
     if (activeTab === "respaldo") {
       return;
     }
@@ -122,33 +118,31 @@ function Configuracion() {
       const p = normalizarHex(colorPrincipal);
       const s = normalizarHex(colorSecundario);
       if (!p || !s) {
-        setAvisoError(
-          `Ingresa colores HEX válidos (#RGB o #RRGGBB). ${!p ? "Color principal inválido: " + colorPrincipal : ""}${!s ? " Color secundario inválido: " + colorSecundario : ""}`
-        );
+        showOpResult("error", "Error", `Ingresa colores HEX válidos (#RGB o #RRGGBB). ${!p ? "Color principal inválido: " + colorPrincipal : ""}${!s ? " Color secundario inválido: " + colorSecundario : ""}`);
         return;
       }
       aplicarColores(p, s);
       setColoresGuardados({ principal: p, secundario: s });
       setColorPrincipal(p);
       setColorSecundario(s);
-      setAviso("Cambios guardados.");
+      showOpResult("success", "Colores guardados", "Colores guardados correctamente.");
       return;
     }
 
     if (activeTab === "preferencias") {
       const n = Number(umbral);
       if (!Number.isInteger(n) || n < 0) {
-        setAvisoError("El umbral de stock bajo debe ser un número entero mayor o igual a 0.");
+        showOpResult("error", "Error", "El umbral de stock bajo debe ser un número entero mayor o igual a 0.");
         return;
       }
       try {
         localStorage.setItem("umbralStockBajo", String(n));
       } catch {
-        setAvisoError("No se pudo guardar el umbral de stock bajo en este dispositivo.");
+        showOpResult("error", "Error", "No se pudo guardar el umbral de stock bajo en este dispositivo.");
         return;
       }
       setUmbral(n);
-      setAviso("Cambios guardados.");
+      showOpResult("success", "Cambios guardados", "Cambios guardados correctamente.");
       return;
     }
 
@@ -157,10 +151,10 @@ function Configuracion() {
         localStorage.setItem("notifStockBajo", notif.stockBajo ? "1" : "0");
         localStorage.setItem("notifAgotados", notif.agotados ? "1" : "0");
       } catch {
-        setAvisoError("No se pudieron guardar las notificaciones en este dispositivo.");
+        showOpResult("error", "Error", "No se pudieron guardar las notificaciones en este dispositivo.");
         return;
       }
-      setAviso("Cambios guardados.");
+      showOpResult("success", "Configuración guardada", "Configuración guardada correctamente.");
     }
   };
 
@@ -304,9 +298,13 @@ function Configuracion() {
       </div>
 
       <div className="container config-container">
-        {aviso && <div className="success-banner">{aviso}</div>}
-      {avisoError && <div className="error-banner">{avisoError}</div>}
-
+      <OperationResultModal
+        isOpen={!!opResult}
+        type={opResult?.type}
+        title={opResult?.title}
+        message={opResult?.message}
+        onClose={() => setOpResult(null)}
+      />
       <div className="row g-3">
         <div className="col-12 col-md-4 col-xl-3">
           <div className="config-tabs">

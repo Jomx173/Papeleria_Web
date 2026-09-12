@@ -14,6 +14,7 @@ import {
   FaStickyNote,
 } from "react-icons/fa";
 import Modal from "../components/Modal";
+import OperationResultModal from "../components/OperationResultModal";
 import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import {
   getCategories,
@@ -37,6 +38,11 @@ function Categorias() {
   const [formError, setFormError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [opResult, setOpResult] = useState(null);
+
+  const showOpResult = (type, title, message) => {
+    setOpResult({ type, title, message });
+  };
 
   const load = useCallback(() => {
     setLoading(true);
@@ -95,13 +101,15 @@ function Categorias() {
     try {
       if (editing) {
         await updateCategory(editing.id, { nombre });
+        showOpResult("success", "Categoría actualizada", "Categoría actualizada correctamente.");
       } else {
         await createCategory({ nombre });
+        showOpResult("success", "Categoría creada", "Categoría creada correctamente.");
       }
       handleCancel();
       reload();
     } catch (err) {
-      setFormError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -115,8 +123,9 @@ function Categorias() {
     try {
       await deleteCategory(category.id);
       reload();
+      showOpResult("success", "Categoría eliminada", "Categoría eliminada correctamente.");
     } catch (err) {
-      setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -155,6 +164,13 @@ function Categorias() {
 
   return (
     <>
+      <OperationResultModal
+        isOpen={!!opResult}
+        type={opResult?.type}
+        title={opResult?.title}
+        message={opResult?.message}
+        onClose={() => setOpResult(null)}
+      />
       <div className="page-banner">
         <div className="page-banner-text">
           <span className="page-banner-icon">

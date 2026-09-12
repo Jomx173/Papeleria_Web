@@ -24,6 +24,7 @@ import ProductBulk from "../components/ProductBulk";
 import CategoryFilter from "../components/CategoryFilter";
 import StockAlert from "../components/StockAlert";
 import Modal from "../components/Modal";
+import OperationResultModal from "../components/OperationResultModal";
 import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import { getProducts, createProduct, updateProduct, deleteProduct, adjustProductsStock } from "../services/api";
 import { exportProductosExcel, printProductos } from "../utils/exportProductos";
@@ -53,9 +54,8 @@ function Productos() {
   const [adjusting, setAdjusting] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [stockStamp, setStockStamp] = useState(0);
-  const [toast, setToast] = useState("");
+  const [opResult, setOpResult] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
-  const toastTimer = useRef(null);
   const moreRef = useRef(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
@@ -70,13 +70,9 @@ function Productos() {
     return () => document.removeEventListener("click", handleClick);
   }, [showMore]);
 
-  const showToast = (message) => {
-    setToast(message);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 3500);
+  const showOpResult = (type, title, message) => {
+    setOpResult({ type, title, message });
   };
-
-  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const loadProducts = useCallback(() => {
     setLoading(true);
@@ -112,16 +108,16 @@ function Productos() {
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, data);
-        showToast("Cambios guardados correctamente.");
+        showOpResult("success", "Producto actualizado", "Producto actualizado correctamente.");
       } else {
         await createProduct(data);
-        showToast("Producto registrado correctamente.");
+        showOpResult("success", "Producto registrado", "Producto registrado correctamente.");
       }
       setShowForm(false);
       setEditingProduct(null);
       loadProducts();
     } catch (err) {
-      setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -129,14 +125,15 @@ function Productos() {
     try {
       await Promise.all(products.map((product) => createProduct(product)));
       setShowBulk(false);
-      showToast(
-        `${products.length} producto${products.length === 1 ? "" : "s"} registrado${
-          products.length === 1 ? "" : "s"
-        } correctamente.`
+      const n = products.length;
+      showOpResult(
+        "success",
+        "Productos registrados",
+        `${n} producto${n === 1 ? "" : "s"} registrad${n === 1 ? "o" : "os"} correctamente.`
       );
       loadProducts();
     } catch (err) {
-      setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -145,8 +142,9 @@ function Productos() {
     try {
       await deleteProduct(id);
       loadProducts();
+      showOpResult("success", "Producto eliminado", "Producto eliminado correctamente.");
     } catch (err) {
-      setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -171,9 +169,13 @@ function Productos() {
       loadProducts();
       setPage(1);
       setStockStamp((v) => v + 1);
-      showToast(`${n} producto${n === 1 ? "" : "s"} eliminado${n === 1 ? "" : "s"} correctamente.`);
+      showOpResult(
+        "success",
+        "Productos eliminados",
+        `${n} producto${n === 1 ? "" : "s"} eliminad${n === 1 ? "o" : "os"} correctamente.`
+      );
     } catch (err) {
-      setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
@@ -214,9 +216,9 @@ function Productos() {
       setAdjustModo("aumentar");
       loadProducts();
       setStockStamp((v) => v + 1);
-      showToast("Ajuste de stock aplicado correctamente.");
+      showOpResult("success", "Stock actualizado", "Stock actualizado correctamente.");
     } catch (err) {
-      setAdjustError(err.message);
+      showOpResult("error", "Error", err.message);
     } finally {
       setAdjusting(false);
     }
@@ -288,8 +290,13 @@ function Productos() {
       </div>
 
       <div className="container">
-        {toast && <div className="success-banner">{toast}</div>}
-
+        <OperationResultModal
+          isOpen={!!opResult}
+          type={opResult?.type}
+          title={opResult?.title}
+          message={opResult?.message}
+          onClose={() => setOpResult(null)}
+        />
         <StockAlert key={stockStamp} />
 
       <div className="toolbar">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaPlus, FaExchangeAlt, FaBook, FaPencilAlt, FaHighlighter, FaCalendarAlt, FaPaperclip, FaStar, FaEye, FaTrash } from "react-icons/fa";
 import Modal from "../components/Modal";
+import OperationResultModal from "../components/OperationResultModal";
 import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import { getMovements, createMovement, deleteMovement, getProducts } from "../services/api";
 
@@ -31,6 +32,11 @@ function Movimientos() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [opResult, setOpResult] = useState(null);
+
+  const showOpResult = (type, title, message) => {
+    setOpResult({ type, title, message });
+  };
 
   const load = useCallback(() => {
     setLoading(true);
@@ -74,8 +80,11 @@ function Movimientos() {
       await createMovement(payload);
       setShowForm(false);
       load();
+      const tipoLabel = form.tipo === "entrada" ? "Entrada" : form.tipo === "salida" ? "Salida" : "Ajuste de inventario";
+      showOpResult("success", "Movimiento registrado", `${tipoLabel} registrad${form.tipo === "ajuste" ? "o" : "a"} correctamente.`);
     } catch (err) {
       setFormError(err.message);
+      showOpResult("error", "Error", err.message);
     } finally {
       setSaving(false);
     }
@@ -88,13 +97,22 @@ function Movimientos() {
     try {
       await deleteMovement(movement.id);
       load();
+      showOpResult("success", "Movimiento eliminado", "Movimiento eliminado correctamente.");
     } catch (err) {
       setError(err.message);
+      showOpResult("error", "Error", err.message);
     }
   };
 
   return (
     <>
+      <OperationResultModal
+        isOpen={!!opResult}
+        type={opResult?.type}
+        title={opResult?.title}
+        message={opResult?.message}
+        onClose={() => setOpResult(null)}
+      />
       <div className="page-banner">
         <div className="page-banner-text">
           <span className="page-banner-icon">
@@ -119,6 +137,13 @@ function Movimientos() {
       </div>
 
       <div className="container">
+      <OperationResultModal
+        isOpen={!!opResult}
+        type={opResult?.type}
+        title={opResult?.title}
+        message={opResult?.message}
+        onClose={() => setOpResult(null)}
+      />
       <div className="toolbar mx-0">
         <div className="toolbar-actions">
           <button onClick={openForm}>
