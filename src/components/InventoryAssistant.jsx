@@ -4,7 +4,7 @@ import AssistantMessage from "./AssistantMessage";
 import ConfirmationCard from "./ConfirmationCard";
 import AssistantInput from "./AssistantInput";
 import { creaoUpsertProduct, searchProducts, createMovement } from "../services/api";
-import { parseNaturalLanguage } from "../utils/parseNaturalLanguage";
+import { parseNaturalLanguage, cleanProductNameForSearch } from "../utils/parseNaturalLanguage";
 
 function InventoryAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,9 +67,20 @@ function InventoryAssistant() {
         throw new Error("No pude identificar la cantidad. Indica cuántas unidades.\nEjemplo: 'Tengo 30 cuadernos...'");
       }
       
-      // Buscar productos que coincidan
-      const searchTerm = parsed.producto;
-      const products = await searchProducts(searchTerm, 10);
+      // Buscar productos que coincidan - probar variantes singular/plural
+      const searchVariants = cleanProductNameForSearch(parsed.producto);
+      let products = [];
+      for (const variant of searchVariants) {
+        const found = await searchProducts(variant, 10);
+        if (found.length > 0) {
+          products = found;
+          break;
+        }
+      }
+      // Si no se encontró nada, intentar búsqueda general con el término original
+      if (products.length === 0) {
+        products = await searchProducts(parsed.producto, 10);
+      }
       
       const serialize = (p) => {
         const estado = p.cantidad === 0 ? "agotado" : p.cantidad <= p.stock_minimo ? "stock_bajo" : "en_stock";

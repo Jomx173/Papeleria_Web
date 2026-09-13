@@ -42,16 +42,21 @@ export const parseNaturalLanguage = (text) => {
   }
   
   // Extraer nombre del producto: buscar después de verbos de acción
-  const accionMatch = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+)?$/);
+  // Mejorado: detener en indicadores de precio (a, por, precio) o al final
+  const accionMatch = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?)?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/);
   if (accionMatch && accionMatch[1]) {
-    result.producto = accionMatch[1].trim();
+    result.producto = cleanProductName(accionMatch[1].trim());
   } else {
     // Fallback: tomar texto después de la cantidad
     if (result.cantidad) {
       const afterCantidad = lower.split(result.cantidad.toString())[1] || "";
-      const clean = afterCantidad.replace(/^(?:\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?)?$/, "").trim();
+      // Limpiar: quitar precio al final, "cada uno", "lempiras", etc.
+      let clean = afterCantidad
+        .replace(/^\s+/, "")
+        .replace(/\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/, "")
+        .replace(/^\s+|\s+$/g, "");
       if (clean && clean.length > 2) {
-        result.producto = clean;
+        result.producto = cleanProductName(clean);
       }
     }
   }
@@ -90,13 +95,46 @@ export const parseNaturalLanguage = (text) => {
   if (!result.producto) {
     const cleaned = lower
       .replace(/^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+/, "")
-      .replace(/\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?$/, "")
+      .replace(/\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/, "")
       .replace(/^\d+\s+/, "")
       .trim();
     if (cleaned.length > 2) {
-      result.producto = cleaned;
+      result.producto = cleanProductName(cleaned);
     }
   }
   
   return result;
+};
+
+// Función auxiliar para limpiar el nombre del producto
+function cleanProductName(name) {
+  return name
+    // Quitar palabras finales comunes que no son parte del nombre
+    .replace(/\s+(?:cada\s+uno|unidad|unidades|lempiras?|pesos?|dólares?|usd|us\$|piezas?|unidades?)$/i, "")
+    // Quitar artículos finales
+    .replace(/\s+(?:el|la|los|las|un|una|unos|unas)$/i, "")
+    // Normalizar espacios
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Exportar también la función de limpieza para uso en búsqueda
+export const cleanProductNameForSearch = (name) => {
+  const cleaned = cleanProductName(name);
+  // Generar variantes singular/plural para búsqueda más flexible
+  const variants = new Set([cleaned.toLowerCase()]);
+  
+  // Singular -> plural
+  if (cleaned.endsWith('o')) variants.add(cleaned.toLowerCase() + 's');
+  if (cleaned.endsWith('a')) variants.add(cleaned.toLowerCase() + 's');
+  if (cleaned.endsWith('e')) variants.add(cleaned.toLowerCase() + 's');
+  if (cleaned.endsWith('i')) variants.add(cleaned.toLowerCase() + 's');
+  if (cleaned.endsWith('u')) variants.add(cleaned.toLowerCase() + 's');
+  if (cleaned.endsWith('z')) variants.add(cleaned.toLowerCase().slice(0, -1) + 'ces');
+  
+  // Plural -> singular
+  if (cleaned.endsWith('es')) variants.add(cleaned.toLowerCase().slice(0, -2));
+  if (cleaned.endsWith('s')) variants.add(cleaned.toLowerCase().slice(0, -1));
+  
+  return Array.from(variants);
 };
