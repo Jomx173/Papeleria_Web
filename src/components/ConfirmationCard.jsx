@@ -53,7 +53,7 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
     );
   }
 
-  const { sugerido, advertencia_precio: advertenciaPrecio } = preview;
+  const { sugerido, advertencia_precio: advertenciaPrecio = null } = preview;
   const { existencia_actual, precio_actual, precio_nuevo, entrada, nueva_existencia } = sugerido || {};
 
   return (
@@ -110,7 +110,7 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
         </div>
       </div>
 
-      {advertencia_precio && (
+      {advertenciaPrecio && (
         <div className="price-warning">
           <FaExclamationTriangle className="warning-icon" />
           <p>{advertenciaPrecio}</p>
