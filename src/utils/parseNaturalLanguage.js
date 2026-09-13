@@ -41,20 +41,19 @@ export const parseNaturalLanguage = (text) => {
     result.cantidad = parseInt(cantidadMatch[1], 10);
   }
   
-  // Extraer precio: "a 45", "a 45 lempiras", "a L45", "a L.45", "a 45.00", "precio 45"
-  const precioMatch = lower.match(/(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*(\d+(?:\.\d{1,2})?)/);
-  if (precioMatch) {
-    result.precio = parseFloat(precioMatch[1]);
-  }
-  
-  // Extraer nombre del producto: buscar después de verbos de acción
-  // Mejorado: detener en indicadores de precio (a, por, precio) o al final
+  // Extraer nombre del producto y precio usando regex principal
   const accionMatch = lower.match(
     /^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?))?(?:\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/
   );
   
   if (accionMatch && accionMatch[1]) {
     result.producto = cleanProductName(accionMatch[1].trim());
+    // Extraer precio DESPUÉS del nombre del producto
+    const afterProduct = lower.substring(lower.indexOf(accionMatch[1]) + accionMatch[1].length);
+    const precioMatch = afterProduct.match(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:lempiras?|lps?\.?|l\.?|\b))/i);
+    if (precioMatch) {
+      result.precio = parseFloat(precioMatch[1] || precioMatch[2]);
+    }
   } else {
     // Fallback: tomar texto después de la cantidad y limpiar TODO rastro de precio/unidad
     if (result.cantidad) {
