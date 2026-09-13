@@ -62,7 +62,7 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
         <h3>Confirmar entrada</h3>
       </div>
       
-      <p className="confirmation-message">{mensaje}</p>
+      <p className="confirmation-message">{preview.mensaje}</p>
       
       <div className="confirmation-details">
         <div className="detail-row">
