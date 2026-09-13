@@ -14,7 +14,7 @@ export const parseNaturalLanguage = (text) => {
   };
   
   // Detectar si es salida (venta) o entrada
-  const salidaVerbs = /(?:vendí|vendi|vendió|vendio|salida|salieron|se vendi|vendí|vendí)/;
+  const salidaVerbs = /(?:vendí|vendi|vendió|vendio|salida|salieron|se vendi)/;
   const entradaVerbs = /(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen)/;
   
   if (salidaVerbs.test(lower)) {
@@ -23,13 +23,19 @@ export const parseNaturalLanguage = (text) => {
     result.tipo = "entrada";
   }
   
-  // Extraer cantidad: números enteros seguidos de unidades o solo números al inicio
-  const cantidadMatch = lower.match(/\b(\d+)\s*(?:unidades?|piezas?|pzas?|items?|cuadernos?|lapices?|lapiz|boligrafos?|boligrafo|bolis?|borradores?|marcadores?|cuadernos?|libretas?|resmas?|hojas?|plumas?|bolis?)\b/);
+  // Extraer cantidad: números enteros seguidos de unidades o solo números al inicio o después de verbos
+  const cantidadMatch = lower.match(/\b(\d+)\s*(?:unidades?|piezas?|pzas?|items?|cuadernos?|lapices?|lápices?|lapiz|lápiz|boligrafos?|boligrafo|bolis?|borradores?|marcadores?|cuadernos?|libretas?|resmas?|hojas?|plumas?|bolis?)\b/);
   if (!cantidadMatch) {
     // Buscar solo número seguido de espacio o al inicio
     const simpleCantidad = lower.match(/^\s*(\d+)\s+/);
     if (simpleCantidad) {
       result.cantidad = parseInt(simpleCantidad[1], 10);
+    } else {
+      // Buscar número después de verbos de acción
+      const afterVerbMatch = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(\d+)/);
+      if (afterVerbMatch) {
+        result.cantidad = parseInt(afterVerbMatch[1], 10);
+      }
     }
   } else {
     result.cantidad = parseInt(cantidadMatch[1], 10);
@@ -43,17 +49,21 @@ export const parseNaturalLanguage = (text) => {
   
   // Extraer nombre del producto: buscar después de verbos de acción
   // Mejorado: detener en indicadores de precio (a, por, precio) o al final
-  const accionMatch = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?)?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/);
+  const accionMatch = lower.match(
+    /^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?))?(?:\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/
+  );
+  
   if (accionMatch && accionMatch[1]) {
     result.producto = cleanProductName(accionMatch[1].trim());
   } else {
-    // Fallback: tomar texto después de la cantidad
+    // Fallback: tomar texto después de la cantidad y limpiar TODO rastro de precio/unidad
     if (result.cantidad) {
       const afterCantidad = lower.split(result.cantidad.toString())[1] || "";
-      // Limpiar: quitar precio al final, "cada uno", "lempiras", etc.
       let clean = afterCantidad
         .replace(/^\s+/, "")
-        .replace(/\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/, "")
+        // Eliminar precio y unidades EN CUALQUIER PARTE del string, no solo al final
+        .replace(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?)/gi, "")
+        .replace(/\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$)\b/gi, "")
         .replace(/^\s+|\s+$/g, "");
       if (clean && clean.length > 2) {
         result.producto = cleanProductName(clean);
@@ -95,7 +105,8 @@ export const parseNaturalLanguage = (text) => {
   if (!result.producto) {
     const cleaned = lower
       .replace(/^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+/, "")
-      .replace(/\s+(?:a|por|precio)\s*(?:l\.?|lps?\.?|lempiras?)?\s*\d+(?:\.\d{1,2})?(?:\s+(?:cada|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/, "")
+      .replace(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?)/gi, "")
+      .replace(/\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$)\b/gi, "")
       .replace(/^\d+\s+/, "")
       .trim();
     if (cleaned.length > 2) {
