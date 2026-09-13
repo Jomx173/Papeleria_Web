@@ -5,6 +5,7 @@ import ConfirmationCard from "./ConfirmationCard";
 import AssistantInput from "./AssistantInput";
 import { creaoUpsertProduct, searchProducts, createMovement } from "../services/api";
 import { parseNaturalLanguage, cleanProductNameForSearch } from "../utils/parseNaturalLanguage";
+import { combinedSimilarity as similarity } from "../utils/parseNaturalLanguage";
 
 function InventoryAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,9 +101,43 @@ function InventoryAssistant() {
       
       const resultados = products.map(serialize);
       
-      // Buscar coincidencia exacta por nombre (case-insensitive)
-      const exactMatch = resultados.find(p => p.nombre.toLowerCase() === parsed.producto.toLowerCase());
-      const sugerido = exactMatch || resultados[0] || null;
+      // Buscar el mejor producto coincidente usando similitud
+      const MIN_SIMILARITY = 0.65; // Umbral de similitud para considerar coincidencia
+      const HIGH_SIMILARITY = 0.85; // Umbral para coincidencia muy segura
+      
+      let sugerido = null;
+      let multiplesCandidatos = false;
+      
+      if (resultados.length > 0) {
+        // Calcular similitud para cada producto
+        const productosConSimilitud = resultados.map(p => ({
+          producto: p,
+          similitud: similarity(parsed.producto, p.nombre)
+        }));
+        
+        // Ordenar por similitud descendente
+        productosConSimilitud.sort((a, b) => b.similitud - a.similitud);
+        
+        const mejor = productosConSimilitud[0];
+        
+        if (mejor.similitud >= HIGH_SIMILARITY) {
+          // Coincidencia muy segura - usar directamente
+          sugerido = mejor.producto;
+        } else if (mejor.similitud >= MIN_SIMILARITY) {
+          // Coincidencia moderada - verificar si hay múltiples candidatos similares
+          const candidatosSimilares = productosConSimilitud.filter(p => p.similitud >= MIN_SIMILARITY);
+          if (candidatosSimilares.length > 1) {
+            multiplesCandidatos = true;
+            // Usar el mejor para preview, pero avisar al usuario
+            sugerido = mejor.producto;
+          } else {
+            sugerido = mejor.producto;
+          }
+        } else {
+          // Similitud baja - no hay coincidencia segura
+          sugerido = null;
+        }
+      }
       
       // Determinar acción basada en el tipo detectado (entrada/salida)
       const esSalida = parsed.tipo === "salida";
@@ -129,10 +164,13 @@ function InventoryAssistant() {
           precio_nuevo: parsed.precio
         } : null,
         requiere_confirmacion: true,
+        multiples_candidatos: multiplesCandidatos,
         mensaje: sugerido
-          ? esSalida
-            ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.`
-            : `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`
+          ? multiplesCandidatos
+            ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}) como la opción más similar. Hay otros productos similares. ${esSalida ? `Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.` : `Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`} ¿Es este el correcto?`
+            : esSalida
+              ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.`
+              : `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`
           : `No existe "${parsed.producto}". Se crearía como producto nuevo con ${parsed.cantidad} unidades.`
       };
       

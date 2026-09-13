@@ -138,3 +138,95 @@ export const cleanProductNameForSearch = (name) => {
   
   return Array.from(variants);
 };
+
+// Normalizar texto para comparación: minúsculas, sin acentos, sin puntuación, espacios normalizados
+export const normalizeText = (text) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .replace(/[^\w\s]/g, '') // quitar puntuación
+    .replace(/\s+/g, ' ') // normalizar espacios
+    .trim();
+};
+
+// Calcular similitud Jaro-Winkler entre dos strings
+export const jaroWinklerSimilarity = (s1, s2) => {
+  const s1Norm = normalizeText(s1);
+  const s2Norm = normalizeText(s2);
+  
+  if (s1Norm === s2Norm) return 1;
+  if (!s1Norm || !s2Norm) return 0;
+  
+  // Jaro distance
+  const len1 = s1Norm.length;
+  const len2 = s2Norm.length;
+  
+  if (len1 === 0 || len2 === 0) return 0;
+  
+  const matchDistance = Math.floor(Math.max(len1, len2) / 2) - 1;
+  const s1Matches = new Array(len1).fill(false);
+  const s2Matches = new Array(len2).fill(false);
+  
+  let matches = 0;
+  for (let i = 0; i < len1; i++) {
+    const start = Math.max(0, i - matchDistance);
+    const end = Math.min(i + matchDistance + 1, len2);
+    for (let j = start; j < end; j++) {
+      if (s2Matches[j]) continue;
+      if (s1Norm[i] !== s2Norm[j]) continue;
+      s1Matches[i] = true;
+      s2Matches[j] = true;
+      matches++;
+      break;
+    }
+  }
+  
+  if (matches === 0) return 0;
+  
+  let k = 0;
+  let transpositions = 0;
+  for (let i = 0; i < len1; i++) {
+    if (!s1Matches[i]) continue;
+    while (!s2Matches[k]) k++;
+    if (s1Norm[i] !== s2Norm[k]) transpositions++;
+    k++;
+  }
+  
+  const jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3;
+  
+  // Winkler modification
+  let prefix = 0;
+  const minLen = Math.min(len1, len2, 4);
+  for (let i = 0; i < minLen; i++) {
+    if (s1Norm[i] === s2Norm[i]) prefix++;
+    else break;
+  }
+  
+  return jaro + 0.1 * prefix * (1 - jaro);
+};
+
+// Calcular similitud de palabras (comparar conjunto de palabras)
+export const wordSetSimilarity = (s1, s2) => {
+  const words1 = new Set(normalizeText(s1).split(' ').filter(w => w.length > 1));
+  const words2 = new Set(normalizeText(s2).split(' ').filter(w => w.length > 1));
+  
+  if (words1.size === 0 && words2.size === 0) return 1;
+  if (words1.size === 0 || words2.size === 0) return 0;
+  
+  let intersection = 0;
+  for (const w of words1) {
+    if (words2.has(w)) intersection++;
+  }
+  
+  const union = words1.size + words2.size - intersection;
+  return intersection / union; // Jaccard similarity
+};
+
+// Combinar similitudes para mejor resultado
+export const combinedSimilarity = (s1, s2) => {
+  const jaro = jaroWinklerSimilarity(s1, s2);
+  const jaccard = wordSetSimilarity(s1, s2);
+  // Peso: 70% Jaro-Winkler, 30% Jaccard de palabras
+  return jaro * 0.7 + jaccard * 0.3;
+};
