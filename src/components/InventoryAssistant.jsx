@@ -7,6 +7,59 @@ import { creaoUpsertProduct, searchProducts, createMovement } from "../services/
 import { parseNaturalLanguage, cleanProductNameForSearch } from "../utils/parseNaturalLanguage";
 import { combinedSimilarity as similarity } from "../utils/parseNaturalLanguage";
 
+// Clasificador de intención: detecta si es conversación normal o operación de inventario
+const clasificarIntencion = (text) => {
+  const lower = text.toLowerCase().trim();
+  
+  // Patrones de conversación normal
+  const patronesConversacion = [
+    /^(hola|buenos d[ií]as|buenas tardes|buenas noches|hola)/,
+    /^(gracias|muchas gracias|thx|thanks)/,
+    /^(de nada|no hay de qu[eé])/,
+    /^(c[oó]mo est[aá]s?|qu[eé] tal)/,
+    /^(gracias|thx|thanks)/,
+    /^(de nada|no hay de qu[eé])/,
+    /^(qu[eé] puedes hacer|para qu[eé] sirves|para qu[eé] sirve)/,
+    /^(c[oó]mo funciona|qu[eé] haces|ay[uú]dame|help)/,
+    /^(c[oó]mo (puedo|se) (registrar|agregar|crear) (un )?producto)/,
+    /^(qu[eé] es esto|para qu[eé] es)/,
+    /^(adios|adiós|chao|hasta luego|nos vemos)/,
+    /^(bien|bien y t[uú]?|todo bien)/,
+  ];
+
+  // Patrones claros de operación de inventario (entrada/salida)
+  const patronesInventario = [
+    /\b(tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen)\b/,
+    /\b(vend[íi]|vendio|salida|salieron|se vendi|se vendi[oó])\b/,
+    /\b(agrega|agregar|agregue|agreguen|anota|anota)\b/,
+    /\b(compr[ée]|compro|compra)\b/,
+    /\b(vend[ií]|vendi|vendió|vendio|venta)\b/,
+    /\b(salida|salieron|egres[oó]|egresaron)\b/,
+  ];
+
+  // Primero verificar si es claramente conversación
+  for (const patron of patronesConversacion) {
+    if (patron.test(lower)) {
+      return "CONVERSACION";
+    }
+  }
+
+  // Luego verificar si es claramente inventario
+  for (const patron of patronesInventario) {
+    if (patron.test(lower)) {
+      return "INVENTARIO";
+    }
+  }
+
+  // Si tiene números y palabras de producto, probablemente es inventario
+  if (/\d+/.test(lower) && /\b(cuaderno|l[aá]piz|bol(igrafo|i)?|borrador|marcador|regla|tijera|sacapuntas|borrador|resma|hoja|papel|cinta|pegamento|corrector|tijera|sacapuntas|calculadora|grapadora|perforadora|clip|carpeta|archivador|separador|etiqueta|cinta|mochila|bolso|cartuchera)\b/.test(lower)) {
+    return "INVENTARIO";
+  }
+
+  // Por defecto, si no es claro, asumimos conversación para ser seguro
+  return "CONVERSACION";
+};
+
 function InventoryAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -57,6 +110,36 @@ function InventoryAssistant() {
     setPreview(null);
 
     try {
+      // Clasificar intención antes de procesar
+      const intencion = clasificarIntencion(text);
+      
+      // Si es conversación normal, responder naturalmente sin procesar inventario
+      if (intencion === "CONVERSACION") {
+        const respuestasConversacion = {
+          "hola": "¡Hola! ¿En qué puedo ayudarte hoy?",
+          "buenos días": "¡Buenos días! ¿En qué puedo ayudarte?",
+          "buenas tardes": "¡Buenas tardes! ¿En qué te ayudo?",
+          "buenas noches": "¡Buenas noches! ¿En qué te ayudo?",
+          "gracias": "¡De nada! ¿Hay algo más en lo que te pueda ayudar?",
+          "de nada": "¡Con gusto! ¿Algo más?",
+          "cómo estás": "¡Muy bien, gracias por preguntar! ¿Y tú qué tal?",
+          "qué tal": "¡Todo bien! ¿En qué te ayudo?",
+          "qué puedes hacer": "Puedo ayudarte a registrar entradas de productos, salidas/ventas, buscar productos y actualizar el inventario. Solo dime en lenguaje natural qué necesitas, por ejemplo: 'Tengo 30 cuadernos a 45 lempiras' o 'Vendí 5 lápices'.",
+          "qué haces": "Soy tu asistente de inventario. Puedo registrar entradas, salidas, buscar productos y actualizar stock. ¡Solo dime qué necesitas!",
+          "cómo funciona": "Escribe en lenguaje natural lo que quieres registrar. Ejemplo: 'Tengo 30 cuadernos a 45 lempiras' o 'Vendí 5 lápices'. Yo entiendo, busco el producto y te pido confirmación antes de guardar.",
+          "cómo funciona el asistente": "Escribe en lenguaje natural lo que quieres registrar. Yo interpreto, busco el producto y te pido confirmación antes de guardar.",
+          "ayúdame": "¡Claro! Puedes decirme cosas como 'Tengo 10 cuadernos a 20 lempiras' para registrar entrada, o 'Vendí 5 bolígrafos' para registrar salida. ¿En qué te ayudo?",
+          "help": "I can help you register inventory entries and exits. Just tell me in natural language what you want to record.",
+          "ayuda": "Puedo registrar entradas, salidas, buscar productos y actualizar stock. Ejemplos: 'Tengo 10 cuadernos a 20', 'Vendí 5 lápices', 'Busca bolígrafos'.",
+        };
+        
+        const lower = text.toLowerCase().trim();
+        const respuesta = respuestasConversacion[lower] || "¡Hola! ¿En qué puedo ayudarte? Puedes registrar entradas, salidas o buscar productos. Ejemplo: 'Tengo 10 cuadernos a 20 lempiras'.";
+        addMessage(respuesta, false);
+        setIsProcessing(false);
+        return;
+      }
+      
       // Parsear el texto localmente (sin llamada a API)
       const parsed = parseNaturalLanguage(text);
       
