@@ -53,7 +53,8 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
     );
   }
 
-  const { sugerido, existencia_actual, precio_actual, precio_nuevo, entrada, nueva_existencia, advertencia_precio: advertenciaPrecio } = preview;
+  const { sugerido, advertencia_precio: advertenciaPrecio } = preview;
+  const { existencia_actual, precio_actual, precio_nuevo, entrada, nueva_existencia } = sugerido || {};
 
   return (
     <div className="confirmation-card">
