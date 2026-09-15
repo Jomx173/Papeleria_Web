@@ -140,6 +140,143 @@ function InventoryAssistant() {
         return;
       }
       
+      // Si es CONSULTA: buscar productos y mostrar información SIN modificar inventario
+      if (intencion === "CONSULTA") {
+        // Parsear el texto localmente
+        const parsed = parseNaturalLanguage(text);
+        
+        if (!parsed.producto || parsed.producto.length < 2) {
+          addMessage("No pude identificar qué producto buscas. Intenta ser más específico.\nEjemplo: 'cuaderno norma' o 'buscar lápices'.", false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Buscar productos que coincidan - probar variantes singular/plural
+        const searchVariants = cleanProductNameForSearch(parsed.producto);
+        let products = [];
+        for (const variant of searchVariants) {
+          const found = await searchProducts(variant, 10);
+          if (found.length > 0) {
+            products = found;
+            break;
+          }
+        }
+        // Si no se encontró nada, intentar búsqueda general con el término original
+        if (products.length === 0) {
+          products = await searchProducts(parsed.producto, 10);
+        }
+        
+        const serialize = (p) => {
+          const estado = p.cantidad === 0 ? "agotado" : p.cantidad <= p.stock_minimo ? "stock_bajo" : "en_stock";
+          return {
+            id: p.id,
+            nombre: p.nombre,
+            codigo: p.codigo,
+            cantidad: p.cantidad,
+            stock_minimo: p.stock_minimo,
+            estado,
+            stockBajo: estado !== "en_stock",
+            precio: Number(p.precio),
+            categoria_id: p.categoria_id,
+            categoria: p.categoria ?? null
+          };
+        };
+        
+        const resultados = products.map(serialize);
+        
+        if (resultados.length === 0) {
+          addMessage(`No encontré ningún producto similar a "${parsed.producto}". ¿Quieres que lo cree?`, false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Buscar el mejor producto coincidente usando similitud
+        const MIN_SIMILARITY = 0.65;
+        const HIGH_SIMILARITY = 0.85;
+        
+        let sugerido = null;
+        
+        if (resultados.length > 0) {
+          const productosConSimilitud = resultados.map(p => ({
+            producto: p,
+            similitud: similarity(parsed.producto, p.nombre)
+          }));
+          
+          productosConSimilitud.sort((a, b) => b.similitud - a.similitud);
+          
+          const mejor = productosConSimilitud[0];
+          
+          if (mejor.similitud >= HIGH_SIMILARITY) {
+            sugerido = mejor.producto;
+          } else if (mejor.similitud >= MIN_SIMILARITY) {
+            const candidatosSimilares = productosConSimilitud.filter(p => p.similitud >= MIN_SIMILARITY);
+            if (candidatosSimilares.length > 1) {
+              // multiplesCandidatos = true; // Not used in CONSULTA mode
+              sugerido = mejor.producto;
+            } else {
+              sugerido = mejor.producto;
+            }
+          } else {
+            sugerido = null;
+          }
+        }
+        
+        if (sugerido) {
+          // const stockActual = sugerido.cantidad; // No longer used directly
+          // const nuevaExistencia = sugerido.cantidad; // Solo consulta, no cambia stock
+          
+          let mensaje = `📦 <strong>${sugerido.nombre}</strong>\n`;
+          mensaje += `📦 Stock actual: <strong>${sugerido.cantidad}</strong> unidades\n`;
+          mensaje += `💰 Precio: <strong>L.${Number(sugerido.precio).toFixed(2)}</strong>\n`;
+          if (sugerido.categoria) {
+            mensaje += `📂 Categoría: <strong>${sugerido.categoria}</strong>\n`;
+          }
+          if (sugerido.codigo) {
+            mensaje += `🏷️ Código: <strong>${sugerido.codigo}</strong>\n`;
+          }
+          mensaje += `\n<i>¿Quieres registrar una entrada o salida para este producto?</i>`;
+          
+          const preview = {
+            accion: "consulta",
+            texto_original: text,
+            interpretacion: {
+              producto_buscar: parsed.producto,
+              cantidad: 0,
+              precio: parsed.precio,
+              categoria_inferida: null,
+              tipo: "consulta"
+            },
+            productos_encontrados: resultados,
+            sugerido: sugerido ? {
+              ...sugerido,
+              existencia_actual: sugerido.cantidad,
+              nueva_existencia: sugerido.cantidad,
+              precio_actual: sugerido.precio,
+              precio_nuevo: sugerido.precio
+            } : null,
+            requiere_confirmacion: false,
+            multiples_candidatos: false,
+            mensaje: mensaje,
+            // accion: "consulta"  // Duplicado - ya definido arriba
+          };
+          
+          setLastPreview(preview);
+          setPreview(preview);
+          
+          addMessage(
+            `📦 <strong>${sugerido.nombre}</strong> (stock actual: ${sugerido.cantidad}). ${preview.mensaje.replace(/<[^>]*>/g, '')}`,
+            false
+          );
+          setIsProcessing(false);
+          return;
+        } else {
+          // No se encontró producto
+          addMessage(`No encontré ningún producto similar a "${parsed.producto}". ¿Quieres que lo cree?`, false);
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
       // Parsear el texto localmente (sin llamada a API)
       const parsed = parseNaturalLanguage(text);
       
