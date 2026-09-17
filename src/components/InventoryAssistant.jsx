@@ -7,24 +7,25 @@ import { creaoUpsertProduct, searchProducts, createMovement } from "../services/
 import { parseNaturalLanguage, cleanProductNameForSearch } from "../utils/parseNaturalLanguage";
 import { combinedSimilarity as similarity } from "../utils/parseNaturalLanguage";
 
-// Clasificador de intención: detecta si es conversación normal o operación de inventario
+// Clasificador de intención: prioridad CONVERSACION -> OPERACION -> CONSULTA
 const clasificarIntencion = (text) => {
   const lower = text.toLowerCase().trim();
   
   // Patrones de conversación normal
   const patronesConversacion = [
-    /^(hola|buenos d[ií]as|buenas tardes|buenas noches|hola)/,
-    /^(gracias|muchas gracias|thx|thanks)/,
-    /^(de nada|no hay de qu[eé])/,
-    /^(c[oó]mo est[aá]s?|qu[eé] tal)/,
-    /^(gracias|thx|thanks)/,
-    /^(de nada|no hay de qu[eé])/,
-    /^(qu[eé] puedes hacer|para qu[eé] sirves|para qu[eé] sirve)/,
-    /^(c[oó]mo funciona|qu[eé] haces|ay[uú]dame|help)/,
-    /^(c[oó]mo (puedo|se) (registrar|agregar|crear) (un )?producto)/,
-    /^(qu[eé] es esto|para qu[eé] es)/,
-    /^(adios|adiós|chao|hasta luego|nos vemos)/,
-    /^(bien|bien y t[uú]?|todo bien)/,
+    /^(hola)$/,
+    /^(buenos d[ií]as)$/,
+    /^(buenas tardes)$/,
+    /^(buenas noches)$/,
+    /^(gracias|muchas gracias|thx|thanks)$/,
+    /^(de nada|no hay de qu[eé])$/,
+    /^(c[oó]mo est[aá]s?|qu[eé] tal)$/,
+    /^(qu[eé] puedes hacer|para qu[eé] sirves|para qu[eé] sirve)$/,
+    /^(c[oó]mo funciona|qu[eé] haces|ay[uú]dame|help)$/,
+    /^(c[oó]mo (puedo|se) (registrar|agregar|crear) (un )?producto)$/,
+    /^(qu[eé] es esto|para qu[eé] es)$/,
+    /^(adios|adiós|chao|hasta luego|nos vemos)$/,
+    /^(bien|bien y t[uú]?|todo bien)$/,
   ];
 
   // Patrones claros de operación de inventario (entrada/salida)
@@ -37,27 +38,22 @@ const clasificarIntencion = (text) => {
     /\b(salida|salieron|egres[oó]|egresaron)\b/,
   ];
 
-  // Primero verificar si es claramente conversación
   for (const patron of patronesConversacion) {
     if (patron.test(lower)) {
       return "CONVERSACION";
     }
   }
 
-  // Luego verificar si es claramente inventario
-  for (const patron of patronesInventario) {
-    if (patron.test(lower)) {
-      return "INVENTARIO";
-    }
+  // B) OPERACION: verbo de acción reconocido Y un número
+  const verboOperacion = /\b(tengo|agrega|agregar|compr[ée]|vend[íi]?|entran|llegaron|salió|salieron|egresaron)\b/.test(lower);
+  const tieneNumero = /\d+/.test(lower);
+
+  if (verboOperacion && tieneNumero) {
+    return "OPERACION";
   }
 
-  // Si tiene números y palabras de producto, probablemente es inventario
-  if (/\d+/.test(lower) && /\b(cuaderno|l[aá]piz|bol(igrafo|i)?|borrador|marcador|regla|tijera|sacapuntas|borrador|resma|hoja|papel|cinta|pegamento|corrector|tijera|sacapuntas|calculadora|grapadora|perforadora|clip|carpeta|archivador|separador|etiqueta|cinta|mochila|bolso|cartuchera)\b/.test(lower)) {
-    return "INVENTARIO";
-  }
-
-  // Por defecto, si no es claro, asumimos conversación para ser seguro
-  return "CONVERSACION";
+  // C) CONSULTA (DEFAULT): cualquier otro caso — buscar producto directamente
+  return "CONSULTA";
 };
 
 function InventoryAssistant() {
@@ -136,6 +132,292 @@ function InventoryAssistant() {
         const lower = text.toLowerCase().trim();
         const respuesta = respuestasConversacion[lower] || "¡Hola! ¿En qué puedo ayudarte? Puedes registrar entradas, salidas o buscar productos. Ejemplo: 'Tengo 10 cuadernos a 20 lempiras'.";
         addMessage(respuesta, false);
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Si es CONSULTA: buscar productos y mostrar información SIN modificar inventario
+      if (intencion === "CONSULTA") {
+        // Parsear el texto localmente
+        const parsed = parseNaturalLanguage(text);
+        
+        if (!parsed.producto || parsed.producto.length < 2) {
+          addMessage("No pude identificar qué producto buscas. Intenta ser más específico.\nEjemplo: 'cuaderno norma' o 'buscar lápices'.", false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Buscar productos que coincidan - probar variantes singular/plural
+        const searchVariants = cleanProductNameForSearch(parsed.producto);
+        let products = [];
+        for (const variant of searchVariants) {
+          const found = await searchProducts(variant, 10);
+          if (found.length > 0) {
+            products = found;
+            break;
+          }
+        }
+        // Si no se encontró nada, intentar búsqueda general con el término original
+        if (products.length === 0) {
+          products = await searchProducts(parsed.producto, 10);
+        }
+        
+        const serialize = (p) => {
+          const estado = p.cantidad === 0 ? "agotado" : p.cantidad <= p.stock_minimo ? "stock_bajo" : "en_stock";
+          return {
+            id: p.id,
+            nombre: p.nombre,
+            codigo: p.codigo,
+            cantidad: p.cantidad,
+            stock_minimo: p.stock_minimo,
+            estado,
+            stockBajo: estado !== "en_stock",
+            precio: Number(p.precio),
+            categoria_id: p.categoria_id,
+            categoria: p.categoria ?? null
+          };
+        };
+        
+        const resultados = products.map(serialize);
+        
+        if (resultados.length === 0) {
+          addMessage(`No encontré ningún producto similar a "${parsed.producto}". ¿Quieres que lo cree?`, false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Buscar el mejor producto coincidente usando similitud
+        const MIN_SIMILARITY = 0.65;
+        const HIGH_SIMILARITY = 0.85;
+        
+        let sugerido = null;
+        
+        if (resultados.length > 0) {
+          const productosConSimilitud = resultados.map(p => ({
+            producto: p,
+            similitud: similarity(parsed.producto, p.nombre)
+          }));
+          
+          productosConSimilitud.sort((a, b) => b.similitud - a.similitud);
+          
+          const mejor = productosConSimilitud[0];
+          
+          if (mejor.similitud >= HIGH_SIMILARITY) {
+            sugerido = mejor.producto;
+          } else if (mejor.similitud >= MIN_SIMILARITY) {
+            const candidatosSimilares = productosConSimilitud.filter(p => p.similitud >= MIN_SIMILARITY);
+            if (candidatosSimilares.length > 1) {
+              sugerido = mejor.producto;
+            } else {
+              sugerido = mejor.producto;
+            }
+          } else {
+            sugerido = null;
+          }
+        }
+        
+        if (sugerido) {
+          let mensaje = `📦 <strong>${sugerido.nombre}</strong>\n`;
+          mensaje += `📦 Stock actual: <strong>${sugerido.cantidad}</strong> unidades\n`;
+          mensaje += `💰 Precio: <strong>L.${Number(sugerido.precio).toFixed(2)}</strong>\n`;
+          if (sugerido.categoria) {
+            mensaje += `📂 Categoría: <strong>${sugerido.categoria}</strong>\n`;
+          }
+          if (sugerido.codigo) {
+            mensaje += `🏷️ Código: <strong>${sugerido.codigo}</strong>\n`;
+          }
+          mensaje += `\n<i>¿Quieres registrar una entrada o salida para este producto?</i>`;
+          
+          const preview = {
+            accion: "consulta",
+            texto_original: text,
+            interpretacion: {
+              producto_buscar: parsed.producto,
+              cantidad: 0,
+              precio: parsed.precio,
+              categoria_inferida: null,
+              tipo: "consulta"
+            },
+            productos_encontrados: resultados,
+            sugerido: sugerido ? {
+              ...sugerido,
+              existencia_actual: sugerido.cantidad,
+              nueva_existencia: sugerido.cantidad,
+              precio_actual: sugerido.precio,
+              precio_nuevo: sugerido.precio
+            } : null,
+            requiere_confirmacion: false,
+            multiples_candidatos: false,
+            mensaje: mensaje,
+          };
+          
+          setLastPreview(preview);
+          setPreview(preview);
+          
+          addMessage(
+            `📦 <strong>${sugerido.nombre}</strong> (stock actual: ${sugerido.cantidad}). ${preview.mensaje.replace(/<[^>]*>/g, '')}`,
+            false
+          );
+          setIsProcessing(false);
+          return;
+        } else {
+          // No se encontró producto
+          addMessage(`No encontré ningún producto similar a "${parsed.producto}". ¿Quieres que lo cree?`, false);
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
+      // Si es OPERACION: procesar operación de inventario (entrada/salida)
+      if (intencion === "OPERACION") {
+        // Parsear el texto localmente (sin llamada a API)
+        const parsed = parseNaturalLanguage(text);
+        
+        if (!parsed.producto || parsed.producto.length < 2) {
+          addMessage("No pude identificar el producto en tu mensaje. Intenta ser más específico.", false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        if (!parsed.cantidad || parsed.cantidad <= 0) {
+          addMessage("No pude identificar la cantidad. Indica cuántas unidades.", false);
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Buscar productos que coincidan - probar variantes singular/plural
+        const searchVariants = cleanProductNameForSearch(parsed.producto);
+        let products = [];
+        for (const variant of searchVariants) {
+          const found = await searchProducts(variant, 10);
+          if (found.length > 0) {
+            products = found;
+            break;
+          }
+        }
+        // Si no se encontró nada, intentar búsqueda general con el término original
+        if (products.length === 0) {
+          products = await searchProducts(parsed.producto, 10);
+        }
+        
+        const serialize = (p) => {
+          const estado = p.cantidad === 0 ? "agotado" : p.cantidad <= p.stock_minimo ? "stock_bajo" : "en_stock";
+          return {
+            id: p.id,
+            nombre: p.nombre,
+            codigo: p.codigo,
+            cantidad: p.cantidad,
+            stock_minimo: p.stock_minimo,
+            estado,
+            stockBajo: estado !== "en_stock",
+            precio: Number(p.precio),
+            categoria_id: p.categoria_id,
+            categoria: p.categoria ?? null
+          };
+        };
+        
+        const resultados = products.map(serialize);
+        
+        // Buscar el mejor producto coincidente usando similitud
+        const MIN_SIMILARITY = 0.65; // Umbral de similitud para considerar coincidencia
+        const HIGH_SIMILARITY = 0.85; // Umbral para coincidencia muy segura
+        
+        let sugerido = null;
+        let multiplesCandidatos = false;
+        
+        if (resultados.length > 0) {
+          // Calcular similitud para cada producto
+          const productosConSimilitud = resultados.map(p => ({
+            producto: p,
+            similitud: similarity(parsed.producto, p.nombre)
+          }));
+          
+          // Ordenar por similitud descendente
+          productosConSimilitud.sort((a, b) => b.similitud - a.similitud);
+          
+          const mejor = productosConSimilitud[0];
+          
+          if (mejor.similitud >= HIGH_SIMILARITY) {
+            // Coincidencia muy segura - usar directamente
+            sugerido = mejor.producto;
+          } else if (mejor.similitud >= MIN_SIMILARITY) {
+            // Coincidencia moderada - verificar si hay múltiples candidatos similares
+            const candidatosSimilares = productosConSimilitud.filter(p => p.similitud >= MIN_SIMILARITY);
+            if (candidatosSimilares.length > 1) {
+              multiplesCandidatos = true;
+              // Usar el mejor para preview, pero avisar al usuario
+              sugerido = mejor.producto;
+            } else {
+              sugerido = mejor.producto;
+            }
+          } else {
+            // Similitud baja - no hay coincidencia segura
+            sugerido = null;
+          }
+        }
+        
+        // Determinar acción basada en el tipo detectado (entrada/salida)
+        const esSalida = parsed.tipo === "salida";
+        const accion = sugerido ? (esSalida ? "salida" : "entrada") : "crear";
+        
+        let preview = {
+          accion,
+          texto_original: parsed.originalText,
+          interpretacion: {
+            producto_buscar: parsed.producto,
+            cantidad: parsed.cantidad,
+            precio: parsed.precio,
+            categoria_inferida: null,
+            tipo: parsed.tipo
+          },
+          productos_encontrados: resultados,
+          sugerido: sugerido ? {
+            ...sugerido,
+            existencia_actual: sugerido.cantidad,
+            nueva_existencia: esSalida 
+              ? Math.max(0, sugerido.cantidad - parsed.cantidad)
+              : sugerido.cantidad + parsed.cantidad,
+            precio_actual: sugerido.precio,
+            precio_nuevo: parsed.precio
+          } : null,
+          requiere_confirmacion: true,
+          multiples_candidatos: multiplesCandidatos,
+          mensaje: sugerido
+            ? multiplesCandidatos
+              ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}) como la opción más similar. Hay otros productos similares. ${esSalida ? `Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.` : `Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`} ¿Es este el correcto?`
+              : esSalida
+                ? `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se restarían ${parsed.cantidad} unidades → nuevo stock: ${Math.max(0, sugerido.cantidad - parsed.cantidad)}.`
+                : `Encontré "${sugerido.nombre}" (stock: ${sugerido.cantidad}). Se sumarían ${parsed.cantidad} unidades → nuevo stock: ${sugerido.cantidad + parsed.cantidad}.`
+            : `No existe "${parsed.producto}". Se crearía como producto nuevo con ${parsed.cantidad} unidades.`
+        };
+        
+        // Si hay precio indicado y difiere del actual
+        if (sugerido && parsed.precio && Number(sugerido.precio) !== parsed.precio) {
+          preview.advertencia_precio = `El producto "${sugerido.nombre}" actualmente tiene precio L.${Number(sugerido.precio).toFixed(2)} y estás indicando L.${parsed.precio.toFixed(2)}. ¿Quieres actualizar también el precio?`;
+          preview.requiere_confirmacion_precio = true;
+        }
+        
+        // Si no hay categoría y hay sugerido, usar su categoría
+        if (sugerido && sugerido.categoria_id) {
+          preview.interpretacion.categoria_inferida = sugerido.categoria_id;
+        }
+        
+        setLastPreview(preview);
+        setPreview(preview);
+        
+        if (sugerido) {
+          addMessage(
+            `Encontré <strong>${sugerido.nombre}</strong> (stock actual: ${sugerido.cantidad}). ${preview.mensaje}`,
+            false
+          );
+        } else if (resultados.length > 0) {
+          addMessage(
+            `Encontré ${resultados.length} producto(s) relacionado(s). Selecciona el correcto o confirma para crear uno nuevo.`,
+            false
+          );
+        } else {
+          addMessage(preview.mensaje, false);
+        }
         setIsProcessing(false);
         return;
       }
