@@ -2,7 +2,7 @@
 // Lógica de parsing de lenguaje natural movida al frontend para evitar llamadas a endpoint inexistente
 
 export const parseNaturalLanguage = (text) => {
-  const lower = text.toLowerCase().trim();
+  let lower = text.toLowerCase().trim();
   
   const result = {
     producto: null,
@@ -13,119 +13,204 @@ export const parseNaturalLanguage = (text) => {
     originalText: text
   };
   
-  // Detectar si es salida (venta) o entrada
-  const salidaVerbs = /(?:vendí|vendi|vendió|vendio|salida|salieron|se vendi)/;
-  const entradaVerbs = /(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen)/;
+  // === 1. Detectar tipo: salida tiene prioridad sobre entrada ===
+  const salidaVerbs = /(?:vendí|vendi|vendió|vendio|salida|salieron|se vendi|saca|retirar|retira|quita|quita|restar|resta)/;
+  const entradaVerbs = /(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|registrar|registra|registralo)/;
   
-  if (salidaVerbs.test(lower)) {
+  // Normalizar verbos variantes: sacar/saca, retirar/retira, etc.
+  // Usar replace con ^ y \b para eliminar verbos completos al inicio
+  const verboAcción = lower.match(/^(sacar|saca|retirar|retira|quita|quita|registrar|registra|agrega|agregar|agregue|agreguen|tengo|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio)\s/i);
+  
+  if (verboAcción) {
+    // Eliminar el verbo y el espacio posterior
+    lower = lower.replace(/^(sacar|saca|retirar|retira|quita|quita|registrar|registra|agrega|agregar|agregue|agreguen|tengo|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio)\s/i, '');
+    result.tipo = /^(sacar|saca|retirar|retira|quita|quita)/i.test(verboAcción[1]) ? "salida" : "entrada";
+  } else if (salidaVerbs.test(lower)) {
     result.tipo = "salida";
   } else if (entradaVerbs.test(lower)) {
     result.tipo = "entrada";
   }
   
-  // Extraer cantidad: números enteros seguidos de unidades o solo números al inicio o después de verbos
-  const cantidadMatch = lower.match(/\b(\d+)\s*(?:unidades?|piezas?|pzas?|items?|cuadernos?|lapices?|lápices?|lapiz|lápiz|boligrafos?|boligrafo|bolis?|borradores?|marcadores?|cuadernos?|libretas?|resmas?|hojas?|plumas?|bolis?)\b/);
-  if (!cantidadMatch) {
-    // Buscar solo número seguido de espacio o al inicio
-    const simpleCantidad = lower.match(/^\s*(\d+)\s+/);
-    if (simpleCantidad) {
-      result.cantidad = parseInt(simpleCantidad[1], 10);
+  // === 2. Extraer cantidad (puede aparecer en cualquier posición) ===
+  // Usar match SIN 'g' para obtener capture groups (match[1], match[2], etc.)
+  // El 'g' con match() solo devuelve el full match, no los groups
+  
+  let cantidad = null;
+  
+  // Patrón A: número seguido de unidades/piezas (puede incluir "cajas" como empaque)
+  // Busca número seguido de: unidades, piezas, cajas, cuadernos, lapices, boligrafos, etc.
+  const pA = lower.match(/\b(\d+)\s+(?:unidades?|piezas?|pzas?|items?|cuadernos?|lapices?|lápices?|lapiz|lápiz|boligrafos?|boligrafo|bolis?|cajas?|borradores?|resmas?|hojas?|plumas?)\b/);
+  if (pA) {
+    cantidad = parseInt(pA[1], 10);
+  }
+  
+  // Patrón B: número al inicio seguido de espacio
+  if (!cantidad) {
+    const pB = lower.match(/^\s*(\d+)\s+/);
+    if (pB) {
+      cantidad = parseInt(pB[1], 10);
+    }
+  }
+  
+  // Patrón C: número después de verbo de acción
+  if (!cantidad) {
+    const pC = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi|saca|retirar|retira|quita|quita|restar|renta)\s+(\d+)/);
+    if (pC) {
+      cantidad = parseInt(pC[1], 10);
+    }
+  }
+  
+  result.cantidad = cantidad;
+  
+  // === 3. Extraer precio (puede aparecer en cualquier posición) ===
+  let precio = null;
+  let precioEncontrado = false;
+  
+  // Patrón 1: "a [numero]" o "precio a [numero]" - sin g para capturar
+  // Soporta: "a 15", "a L12", "precio a 15", "15 lempiras", etc.
+  // El número puede ir seguido opcionalmente de "lempiras"
+  // Patrón: "a [numero]" o "precio a [numero]" donde el número es opcional seguido de lempiras
+  const pp1 = lower.match(/\s+(?:a|por|precio)\s+L?(\d+(?:\.\d{1,2})?)(?:\s+lempiras?)?/i);
+  if (pp1 && !precioEncontrado) {
+    const numVal = parseFloat(pp1[1]);
+    if (result.cantidad && numVal === result.cantidad) {
+      // skip
     } else {
-      // Buscar número después de verbos de acción
-      const afterVerbMatch = lower.match(/(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(\d+)/);
-      if (afterVerbMatch) {
-        result.cantidad = parseInt(afterVerbMatch[1], 10);
-      }
-    }
-  } else {
-    result.cantidad = parseInt(cantidadMatch[1], 10);
-  }
-  
-  // Extraer nombre del producto y precio usando regex principal
-  const accionMatch = lower.match(
-    /^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+(?:\d+\s+)?([a-záéíóúñ\s]+?)(?:\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?))?(?:\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$))?$/
-  );
-  
-  if (accionMatch && accionMatch[1]) {
-    result.producto = cleanProductName(accionMatch[1].trim());
-    // Extraer precio DESPUÉS del nombre del producto
-    const afterProduct = lower.substring(lower.indexOf(accionMatch[1]) + accionMatch[1].length);
-    const precioMatch = afterProduct.match(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:lempiras?|lps?\.?|l\.?|\b))/i);
-    if (precioMatch) {
-      result.precio = parseFloat(precioMatch[1] || precioMatch[2]);
-    }
-  } else {
-    // Fallback: tomar texto después de la cantidad y limpiar TODO rastro de precio/unidad
-    if (result.cantidad) {
-      const afterCantidad = lower.split(result.cantidad.toString())[1] || "";
-      let clean = afterCantidad
-        .replace(/^\s+/, "")
-        // Eliminar precio y unidades EN CUALQUIER PARTE del string, no solo al final
-        .replace(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?)/gi, "")
-        .replace(/\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$)\b/gi, "")
-        .replace(/^\s+|\s+$/g, "");
-      if (clean && clean.length > 2) {
-        result.producto = cleanProductName(clean);
-      }
+      precio = numVal;
+      precioEncontrado = true;
     }
   }
   
-  // Si no se encontró producto, intentar extraer sustantivos comunes de papelería
-  if (!result.producto) {
-    const sustantivos = [
-      "cuaderno", "cuadernos", "libreta", "libretas", 
-      "lapiz", "lapices", "lapicero", "lapiceros", 
-      "boligrafo", "boligrafos", "boli", "bolis", 
-      "pluma", "plumas", "borrador", "borradores", 
-      "marcador", "marcadores", "resma", "resmas", 
-      "hoja", "hojas", "papel", "caja", "cajas", 
-      "paquete", "paquetes", "bloc", "blocs", 
-      "archivador", "archivadores", "carpeta", "carpetas", 
-      "separador", "separadores", "etiqueta", "etiquetas", 
-      "cinta", "cintas", "pegamento", "pegamentos", 
-      "corrector", "correctores", "regla", "reglas", 
-      "tijera", "tijeras", "sacapuntas", "calculadora", "calculadoras", 
-      "grapadora", "grapadoras", "perforadora", "perforadoras", 
-      "clip", "clips", "chincheta", "chinchetas", "tachuela", "tachuelas", 
-      "alfiler", "alfileres", "corta", "cortauñas", "cutter", "cutters", 
-      "estuche", "estuches", "mochila", "mochilas", "bolso", "bolsos", 
-      "cartuchera", "cartucheras"
-    ];
-    
-    for (const s of sustantivos) {
-      if (lower.includes(s)) {
-        result.producto = s;
-        break;
+  // Patrón 2: "[numero] lempiras" o "[numero] lps"
+  const pp2 = lower.match(/\b(\d+(?:\.\d{1,2})?)\s+lempiras?/i);
+  if (pp2 && !precioEncontrado) {
+    const numVal = parseFloat(pp2[1]);
+    if (result.cantidad && numVal === result.cantidad) {
+      // skip
+    } else {
+      precio = numVal;
+      precioEncontrado = true;
+    }
+  }
+  
+  // Patrón 3: "L[número]" o "L [número]"
+  const pp3 = lower.match(/\bL\s*(\d+(?:\.\d{1,2})?)/i);
+  if (pp3 && !precioEncontrado) {
+    const numVal = parseFloat(pp3[1]);
+    if (result.cantidad && numVal === result.cantidad) {
+      // skip
+    } else {
+      precio = numVal;
+      precioEncontrado = true;
+    }
+  }
+  
+  // Patrón 4: "a L12" o "a L12 lempiras"
+  if (!precioEncontrado) {
+    const aLPattern = lower.match(/\s+(?:a|por|precio)\s+L?(\d+(?:\.\d{1,2})?)/i);
+    if (aLPattern && !precioEncontrado) {
+      const numVal = parseFloat(aLPattern[1]);
+      if (result.cantidad && numVal === result.cantidad) {
+        // skip
+      } else {
+        precio = numVal;
+        precioEncontrado = true;
       }
     }
   }
   
-  // Si aún no hay producto, usar texto limpio
-  if (!result.producto) {
-    const cleaned = lower
-      .replace(/^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi)\s+/, "")
-      .replace(/\s+(?:a|por|precio)\s*(?:(?:lempiras?|lps?\.?|l\.?)\s*\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?(?:\s*(?:lempiras?|lps?\.?|l\.?))?)/gi, "")
-      .replace(/\s+(?:cada\s+uno|unidad|lempiras?|unidades?|pesos?|dólares?|usd|us\$)\b/gi, "")
-      .replace(/^\d+\s+/, "")
+  result.precio = precio;
+  
+  // === 4. Extraer nombre del producto ===
+  // Quitar cantidad, precio, verbos de acción y indicadores de precio del texto
+  // El producto puede aparecer ANTES o DESPUÉS de la cantidad
+  
+  let remainingText = lower;
+  
+  // Quitar cantidad: solo remover el número específico que encontramos, no patrones de unidades
+  if (result.cantidad) {
+    const cantidadStr = result.cantidad.toString();
+    // SÓLO remover el número de cantidad específico usando replace con RegExp global
+    // No removamos "unidades" u otras palabras - déjalas para el producto
+    remainingText = remainingText.replace(new RegExp(`\\b${cantidadStr}\\b`, 'g'), '')
+      .replace(/\s+/g, ' ')
       .trim();
-    if (cleaned.length > 2) {
-      result.producto = cleanProductName(cleaned);
+  }
+  
+  // Quitar precio y indicadores de precio
+  if (result.precio) {
+    const precioStr = result.precio.toString();
+    // Patrones a remover: "a 15", "precio a 15", "15 lempiras", "L15", etc.
+    // El patrón: "a [numero]" o "precio a [numero]" donde el número es opcional seguido de lempiras
+    // También quita "lempiras" suelta
+    remainingText = remainingText
+      .replace(/\s*(?:a|por|precio)\s+L?\d+(?:\.\d{1,2})?(?:\s+lempiras?)?/gi, '')
+      // También remover "lempiras" suelta que pueda quedar después de quitar el número
+      .replace(/\s+lempiras?/gi, '')
+      .replace(new RegExp(`\\b${precioStr}\\b`, 'g'), '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  
+  // Quitar la palabra "precio" suelta que pueda quedar
+  remainingText = remainingText.replace(/\bprecio\b/gi, '').trim();
+  
+  // Quitar verbos de acción que puedan quedar al inicio
+  // Usar patrón con \b para palabra completa, no parcial
+  remainingText = remainingText
+    .replace(/^(?:tengo|agrega|agregar|agregue|agreguen|entran|llegaron|llego|compre|compro|compré|trae|traigan|ingresan|ingrese|ingresen|vendí|vendi|vendió|vendio|salida|salieron|se vendi|saca|retirar|retira|quita|quita|restar|renta)\s*/i, '')
+    // Patrón de empaque: "cajas de", "pack de", "docenas de", etc.
+    // Quitar "cajas de" cuando sea un indicador de empaque, no nombre de producto
+    .replace(/\bcajas?\s+de\b/gi, '')
+    // Solo remover "cada uno" / "unidad(es)" si está al final de la cadena completa
+    // Evitar remover parcial que concatene con texto anterior
+    .replace(/(?:cada\s+uno|unidad|unidades)\s*$/gi, '')
+    .trim();
+  
+  // Quitar palabra "registralo" y otras basuras finales
+  remainingText = remainingText.replace(/registralo/i, '').trim();
+  remainingText = remainingText.replace(/\s+(?:a|por|precio)\s*$/i, '').trim();
+  
+  // === 5. Limpiar y validar nombre del producto ===
+  let producto = null;
+  
+  // Si después de todo aún queda texto significativo, usarlo como producto
+  if (remainingText && remainingText.length > 2) {
+    // Quitar artículos iniciales sueltos (el, la, los, las, un, una)
+    producto = remainingText.replace(/^(el|la|los|las|un|una|unos|unas)\s+/i, '').trim();
+    
+    // Si el producto tiene aún contenido, limpiarlo
+    // Solo quitar "cada uno"/"unidad(es)" si están al FINAL de la cadena del producto
+    if (producto && producto.length > 2) {
+      // Verificar si el producto termina con estas palabras antes de quitarlas
+      if (/\s+cada\s+uno\s*$/.test(producto) || /\s+unidad(es)?\s*$/.test(producto)) {
+        producto = producto
+          .replace(/\s+(?:cada\s+uno|unidad|unidades|lempiras?|pesos?|dólares?|usd|us\$|piezas?|unidades?)$/i, "")
+          .replace(/\s+(?:el|la|los|las|un|una|unos|unas)$/i, "")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
     }
   }
+  
+  result.producto = producto || null;
   
   return result;
 };
 
 // Función auxiliar para limpiar el nombre del producto
 function cleanProductName(name) {
-  return name
-    // Quitar palabras finales comunes que no son parte del nombre
-    .replace(/\s+(?:cada\s+uno|unidad|unidades|lempiras?|pesos?|dólares?|usd|us\$|piezas?|unidades?)$/i, "")
-    // Quitar artículos finales
-    .replace(/\s+(?:el|la|los|las|un|una|unos|unas)$/i, "")
-    // Normalizar espacios
-    .replace(/\s+/g, " ")
-    .trim();
+  // Solo quitar palabras finales si realmente están al final
+  // No hacer transformaciones heurísticas que modifiquen el nombre
+  if (/\s+cada\s+uno\s*$/.test(name) || /\s+unidad(es)?\s*$/.test(name) || /\s+unidades?\s*$/.test(name)) {
+    return name
+      .replace(/\s+(?:cada\s+uno|unidad|unidades|lempiras?|pesos?|dólares?|usd|us\$|piezas?|unidades?)$/i, "")
+      .replace(/\s+(?:el|la|los|las|un|una|unos|unas)$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  // Si no termina con esas palabras, retornar tal como está (ya limpio de espacios)
+  return name.replace(/\s+/g, " ").trim();
 }
 
 // Exportar también la función de limpieza para uso en búsqueda
