@@ -54,13 +54,14 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
   }
 
   const { sugerido, advertencia_precio: advertenciaPrecio = null } = preview;
-  const { existencia_actual, precio_actual, precio_nuevo, entrada, nueva_existencia } = sugerido || {};
+  const { existencia_actual, precio_actual, precio_nuevo, nueva_existencia } = sugerido || {};
+  const { cantidad, tipo } = preview.interpretacion;
 
   return (
     <div className="confirmation-card">
       <div className="confirmation-header">
         <FaCheckCircle className="success-icon" />
-        <h3>Confirmar entrada</h3>
+        <h3>{preview.accion === "salida" ? "Confirmar salida" : "Confirmar entrada"}</h3>
       </div>
       
       <p className="confirmation-message">{preview.mensaje}</p>
@@ -78,8 +79,8 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
         </div>
         <div className="detail-row">
           <FaBoxes className="icon" />
-          <span className="label">Cantidad a ingresar:</span>
-          <span className="value">{entrada} unidades</span>
+          <span className="label">{tipo === "salida" ? "Cantidad a retirar" : "Cantidad a ingresar"}:</span>
+          <span className="value">{cantidad} unidades</span>
         </div>
         <div className="detail-row">
           <FaDollarSign className="icon" />
@@ -89,7 +90,7 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
         <div className="detail-row total">
           <FaDollarSign className="icon" />
           <span className="label">Total:</span>
-          <span className="value">L{Number(entrada * (precio_nuevo || precio_actual)).toFixed(2)}</span>
+          <span className="value">L{Number(Number(cantidad ?? 0) * Number(precio_nuevo || precio_actual || 0)).toFixed(2)}</span>
         </div>
       </div>
 
@@ -101,7 +102,7 @@ function ConfirmationCard({ preview, onConfirm, onCancel, isConfirming }) {
           </div>
           <div className="stock-arrow">
             <span className="arrow">→</span>
-            <span className="added">+{entrada}</span>
+            <span className="added">+{cantidad}</span>
           </div>
           <div className="stock-after">
             <span className="label">Stock nuevo</span>
