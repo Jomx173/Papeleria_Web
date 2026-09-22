@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBoxOpen, FaTags, FaExclamationTriangle, FaDollarSign, FaBook, FaPencilAlt, FaChartBar, FaStar } from "react-icons/fa";
+import {
+  FaBoxOpen,
+  FaTags,
+  FaExclamationTriangle,
+  FaDollarSign,
+  FaBook,
+  FaPencilAlt,
+  FaRulerCombined,
+  FaStar,
+  FaPaperclip,
+} from "react-icons/fa";
 import { getSummary, getProducts, getLowStockProducts, getMonthlyMovements } from "../services/api";
 import { getCssVar } from "../theme.js";
 import AnimatedNumber from "../components/AnimatedNumber";
 import { formatMoney } from "../utils/formatMoney";
-import { ErrorBlock } from "../components/PageStyles";
+import { LoadingBlock, ErrorBlock } from "../components/PageStates";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 function Inicio() {
@@ -17,7 +26,7 @@ function Inicio() {
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
-    Promise.all([getSummary(), getProducts(), getLowStockProducts(), getMonthlyMovements(1)])
+    Promise.all([getSummary(), getProducts(), getLowStockProducts(), getMonthlyMovements(6)])
       .then(([resumen, prods, alertasList, mes]) => {
         setSummary(resumen);
         setProducts(prods);
@@ -43,150 +52,166 @@ function Inicio() {
       label: "Total de productos",
       raw: summary ? Number(summary.totalProductos) : null,
       fmt: (v) => String(Math.round(v)),
-      icon: FaBoxOpen,
+      icon: <FaBoxOpen />,
+      cls: "violet",
     },
     {
       label: "Categorías",
       raw: summary ? Number(summary.totalCategorias) : null,
       fmt: (v) => String(Math.round(v)),
-      icon: FaTags,
+      icon: <FaTags />,
+      cls: "blue",
     },
     {
       label: "Stock bajo",
       raw: summary ? Number(summary.stockBajo) : null,
       fmt: (v) => String(Math.round(v)),
-      icon: FaExclamationTriangle,
+      icon: <FaExclamationTriangle />,
+      cls: "orange",
     },
     {
       label: "Valor del inventario",
       raw: summary ? Number(summary.valorInventario) : null,
       fmt: (v) => formatMoney(v),
-      icon: FaDollarSign,
+      icon: <FaDollarSign />,
+      cls: "green",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background text-gray-900">
-      <div className="px-4 py-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Inventario de Papelería</h1>
-            <p className="text-sm text-gray-500">Controla y organiza tus productos</p>
+    <>
+      <div className="page-banner">
+        <div className="page-banner-text">
+          <span className="page-banner-icon">
+            <FaBook />
+          </span>
+          <div>
+            <h1>Inventario de Papelería</h1>
+            <p>Controla y organiza tus productos.</p>
           </div>
+        </div>
+        <div className="page-banner-art" aria-hidden="true">
+          <FaPencilAlt className="art art-pencil" />
+          <FaRulerCombined className="art art-ruler" />
+          <FaBook className="art art-book" />
+          <FaStar className="art art-star" />
+          <FaPaperclip className="art art-clip" />
+        </div>
+        <div className="banner-note">
+          <span className="banner-note-text handwritten">Todo bajo control ✍️</span>
+        </div>
+      </div>
 
-          {loading && <div className="py-8 text-center">Cargando resumen...</div>}
-
-          {!loading && error && (
-            <ErrorBlock
-              message={`No se pudieron cargar los datos: ${error}`}
-              onRetry={load}
-            />
-          )}
-
-          {!loading && !error && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container">
+        {loading && <LoadingBlock label="Cargando resumen" />}
+        {!loading && error && (
+          <ErrorBlock
+            message={`No se pudieron cargar los datos: ${error}`}
+            onRetry={load}
+          />
+        )}
+        {!loading && !error && (
+          <>
+            <div className="row g-3 mb-4 reportes-stats">
               {cards.map((card, i) => (
-                <div
-                  key={card.label}
-                  className="rounded-lg border p-4 hover:border-primary transition-colors"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <card.icon className="h-6 w-6" />
-                    <span className="text-sm font-medium">{card.label}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-lg font-semibold">
-                      {card.raw == null ? "—" : <AnimatedNumber value={card.raw} format={card.fmt} delay={i * 90} />}
-                    </span>
-                    <span className="text-xs text-gray-400">{card.icon ? card.icon.type : ""}</span>
+                <div className="col-6 col-lg-3" key={card.label}>
+                  <div className="stat-card">
+                    <span className={`stat-icon ${card.cls}`}>{card.icon}</span>
+                    <div>
+                      <p className="stat-label">{card.label}</p>
+                      <p className="stat-value">
+                        {card.raw == null ? "…" : <AnimatedNumber value={card.raw} format={card.fmt} delay={i * 90} />}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          )}
 
-          {/* Productos recientes section */}
-          <div className="mt-6">
-            <h2 className="text-xl font-medium mb-3">Productos recientes</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full rounded-lg border">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left text-sm font-medium px-4 py-2">Nombre</th>
-                    <th className="text-left text-sm font-medium px-4 py-2">Cantidad</th>
-                    <th className="text-left text-sm font-medium px-4 py-2">Precio</th>
-                    <th className="text-left text-sm font-medium px-4 py-2">Categoría</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="text-center py-8 text-gray-400">
-                        No hay productos registrados
-                      </td>
-                    </tr>
+            <div className="row g-3 mb-4">
+              <div className="col-12 col-lg-7">
+                <div className="page-card h-100">
+                  <h2 className="page-card-title">Entradas vs salidas por mes</h2>
+                  <div className="chart-box">
+                    {monthly.length === 0 ? (
+                      <p className="chart-empty">Sin movimientos registrados</p>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthly}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="mes" stroke="#64748b" fontSize={11} />
+                          <YAxis allowDecimals={false} stroke="#64748b" fontSize={11} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="entradas" name="Entradas" fill={getCssVar("--color-primary") || "#6366f1"} radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="salidas" name="Salidas" fill={getCssVar("--color-secondary") || "#ec4899"} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-lg-5">
+                <div className="page-card h-100">
+                  <h2 className="page-card-title">Productos con stock bajo</h2>
+                  {lowStockList.length === 0 ? (
+                    <p className="chart-empty">Sin productos en alerta</p>
                   ) : (
-                    recentProducts.map((p) => (
-                      <tr key={p.id} className="border-b">
-                        <td className="px-4 py-3">
-                          <FaBook className="h-5 w-5" />
+                    <ul className="alerta-list">
+                      {lowStockList.map((p) => (
+                        <li key={p.id}>
                           <span>{p.nombre}</span>
-                        </td>
-                        <td className="px-4 py-3">{p.cantidad}</td>
-                        <td className="px-4 py-3">{formatMoney(p.precio)}</td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs capitalize">{p.categoria || "Sin categoría"}</span>
-                        </td>
-                      </tr>
-                    ))
+                          <span className="unidades">{p.cantidad} uds.</span>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Stock bajo section */}
-          <div className="mt-4">
-            <h2 className="text-xl font-medium mb-3">
-              <FaExclamationTriangle className="mr-1 h-4 w-4" /> Productos con stock bajo
-            </h2>
-            {lowStockList.length === 0 ? (
-              <p className="text-gray-400 text-sm">Sin productos en alerta</p>
-            ) : (
-              <ul className="space-y-2">
-                {lowStockList.map((p) => (
-                  <li key={p.id} className="flex items-center gap-2 py-1">
-                    <FaExclamationTriangle className="h-3 w-3 text-orange-500" />
-                    <span className="font-medium">{p.nombre}</span>
-                    <span className="text-sm text-orange-600">{p.cantidad} unidades</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Movimiento mensual section */}
-          <div className="mt-4">
-            <h2 className="text-xl font-medium mb-3">
-              <FaChartBar className="mr-1 h-4 w-4" /> Movimiento del mes
-            </h2>
-            <div className="relative height-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="mes" stroke="#6b7280" fontSize={12} />
-                  <YAxis allowDecimals={false} stroke="#6b7280" fontSize={12} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="entradas" name="Entradas" fill={getCssVar("--color-primary") || "#6366f1"} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="salidas" name="Salidas" fill={getCssVar("--color-secondary") || "#ec4899"} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="row g-3">
+              <div className="col-12">
+                <div className="page-card">
+                  <h2 className="page-card-title">Productos recientes</h2>
+                  <div className="table-responsive">
+                    <table className="product-table">
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Cantidad</th>
+                          <th>Precio</th>
+                          <th>Categoría</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentProducts.length === 0 ? (
+                          <tr>
+                            <td colSpan="4" className="empty-row">
+                              No hay productos registrados
+                            </td>
+                          </tr>
+                        ) : (
+                          recentProducts.map((p) => (
+                            <tr key={p.id}>
+                              <td className="product-name">{p.nombre}</td>
+                              <td>{p.cantidad}</td>
+                              <td>{formatMoney(p.precio)}</td>
+                              <td>{p.categoria || "Sin categoría"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }
 

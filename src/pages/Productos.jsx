@@ -409,7 +409,7 @@ function Productos() {
               Has seleccionado {selectedIds.length} producto{selectedIds.length === 1 ? "" : "s"}.
             </p>
             {adjustError && <div className="error-banner">{adjustError}</div>}
-            <div className="form-group">
+            <div>
               <span className="adjust-field-label">Tipo de ajuste</span>
               <div className="adjust-type-toggle">
                 <button
