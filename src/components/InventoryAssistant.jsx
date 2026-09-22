@@ -781,7 +781,7 @@ function InventoryAssistant() {
   // Botón flotante
   const floatingButton = (
     <button
-      className={`assistant-fab ${isOpen ? "open" : ""}`}
+      className="fab-floating rounded-full border-border pulse"
       onClick={toggleAssistant}
       aria-label={isOpen ? "Cerrar asistente" : "Abrir asistente de inventario"}
       title={isOpen ? "Cerrar asistente" : "Asistente de inventario"}
@@ -794,26 +794,26 @@ function InventoryAssistant() {
 
   // Panel del chat
   const chatPanel = isOpen && (
-    <div className="assistant-panel" ref={chatRef}>
-      <div className="assistant-header">
-        <div className="header-content">
+    <div className="assistant-panel bg-card border-border rounded-lg overflow-hidden" ref={chatRef}>
+      <div className="assistant-header bg-header border-b border-border">
+        <div className="header-content px-4 py-3">
           <FaRobot className="header-icon" />
           <div>
-            <h3>Asistente de inventario</h3>
-            <p className="subtitle">Escribe en lenguaje natural</p>
+            <h3 className="header-title">Asistente de inventario</h3>
+            <p className="header-subtitle">Escribe en lenguaje natural</p>
           </div>
         </div>
-        <div className="header-actions">
-          <button className="header-btn" onClick={clearChat} title="Limpiar chat" aria-label="Limpiar conversación">
+        <div className="header-actions px-4">
+          <button className="header-btn sm:hidden" onClick={clearChat} title="Limpiar chat" aria-label="Limpiar conversación">
             <FaTrash />
           </button>
-          <button className="header-btn close-btn" onClick={closeAssistant} aria-label="Cerrar">
+          <button className="header-btn hidden sm:inline-close close-btn" onClick={closeAssistant} aria-label="Cerrar">
             <FaTimes />
           </button>
         </div>
       </div>
 
-      <div className="assistant-messages">
+      <div className="assistant-messages p-4 flex-1 overflow-y-auto">
         {messages.map((msg) => (
           <AssistantMessage
             key={msg.id}

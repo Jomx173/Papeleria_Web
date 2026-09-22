@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { FaEllipsisV, FaEye, FaPencilAlt, FaTrash } from "react-icons/fa";
-import { getCategoryColor } from "../utils/categoryColors";
+import { FaEllipsisV, FaPencilAlt, FaTrash } from "react-icons/fa";
 import { formatMoney } from "../utils/formatMoney";
-import Modal from "./Modal";
 
 const ESTADO_BADGES = {
   en_stock: { cls: "ok", label: "En stock" },
@@ -10,26 +8,8 @@ const ESTADO_BADGES = {
   agotado: { cls: "agotado", label: "Agotado" },
 };
 
-const formatFecha = (fecha) => {
-  if (!fecha) return "—";
-  return new Intl.DateTimeFormat("es", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(fecha));
-};
-
-function ProductList({
-  products,
-  onEdit,
-  onDelete,
-  selectedIds,
-  onToggleSelect,
-  selectAllChecked,
-  onSelectAll,
-}) {
-  const partialSelect =
-    products.length > 0 && !selectAllChecked && products.some((p) => selectedIds.includes(p.id));
+function ProductList({ products, onEdit, onDelete, selectedIds, onToggleSelect, selectAllChecked, onSelectAll }) {
+  const partialSelect = products.length > 0 && !selectAllChecked && products.some((p) => selectedIds.includes(p.id));
 
   const [menuFor, setMenuFor] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -45,107 +25,63 @@ function ProductList({
   }, [menuFor]);
 
   return (
-    <>
-      <div className="table-responsive">
-        <table className="product-table products-table">
-          <thead>
-            <tr>
-              <th className="check-col">
-                <input
-                  type="checkbox"
-                  aria-label="Seleccionar todos"
-                  checked={selectAllChecked}
-                  ref={(el) => {
-                    if (el) el.indeterminate = partialSelect;
-                  }}
-                  onChange={onSelectAll}
-                />
-              </th>
-              <th>Nombre</th>
-              <th>Cantidad</th>
-              <th>Precio</th>
-              <th>Estado</th>
-              <th>Categoría</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+    <div className="table-responsive">
+      <table className="product-table products-table w-full rounded-lg border">
+        <thead>
+          <tr className="border-b">
+            <th className="check-col text-left px-4 py-2">
+              <input type="checkbox" aria-label="Seleccionar todos" checked={selectAllChecked} onChange={onSelectAll} />
+            </th>
+            <th className="text-left px-4 py-2">Nombre</th>
+            <th className="text-left px-4 py-2">Cantidad</th>
+            <th className="text-left px-4 py-2">Precio</th>
+            <th className="text-left px-4 py-2">Estado</th>
+            <th className="text-left px-4 py-2">Categoría</th>
+            <th className="text-left px-4 py-2">Acciones</th>
+          </tr>
+        </thead>
         <tbody>
           {products.length === 0 ? (
             <tr>
-              <td colSpan="7" className="empty-row">
+              <td colSpan="7" className="empty-row text-center py-8 text-gray-400">
                 No hay productos registrados
               </td>
             </tr>
           ) : (
             products.map((product) => {
-              const cat = getCategoryColor(product.categoria);
-              const badge = ESTADO_BADGES[product.estado] || ESTADO_BADGES.stock_bajo;
               return (
-                <tr key={product.id} className={product.stockBajo ? "stock-bajo" : ""}>
-                  <td className="check-col">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(product.id)}
-                      onChange={() => onToggleSelect(product.id)}
-                    />
+                <tr key={product.id} className="border-b">
+                  <td className="check-col px-4 py-2">
+                    <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => onToggleSelect(product.id)} />
                   </td>
-<td className="product-name">
-                    {product.stockBajo && <span title="Stock bajo">⚠️</span>} {product.nombre}
+                  <td className="product-name px-4 py-3">
+                    {product.nombre}
                   </td>
-                  <td className={product.stockBajo ? "cantidad-baja" : ""}>{product.cantidad}</td>
-                  <td>{formatMoney(product.precio)}</td>
+                  <td className="px-4 py-3">{product.cantidad}</td>
+                  <td className="px-4 py-3">{formatMoney(product.precio)}</td>
                   <td>
-                    <span className={`estado-badge ${badge.cls}`}>{badge.label}</span>
+                    <span className={`estado-badge ${ESTADO_BADGES.en_stock.cls}`}>En stock</span>
                   </td>
                   <td>
-                    <span className="cat-pill" style={{ background: cat.bg, color: cat.fg }}>
+                    <span className="cat-pill text-xs capitalize" style={{ background: "#e5e7eb", color: "#6b7280" }}>
                       {product.categoria || "Sin categoría"}
                     </span>
                   </td>
-                  <td>
-                    <span className="row-menu-wrap" ref={menuRef}>
-                      <button
-                        type="button"
-                        className="dots-btn"
-                        aria-label="Más opciones"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuFor(menuFor === product.id ? null : product.id);
-                        }}
-                      >
+                  <td className="px-4 py-2">
+                    <span className="row-menu-wrap">
+                      <button type="button" className="dots-btn" aria-label="Más opciones" onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuFor(menuFor === product.id ? null : product.id);
+                      }}>
                         <FaEllipsisV />
                       </button>
                       {menuFor === product.id && (
                         <div className="row-menu" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            className="menu-edit"
-                            onClick={() => {
-                              setMenuFor(null);
-                              onEdit(product);
-                            }}
-                          >
+                          <button type="button" className="menu-edit" onClick={() => { setMenuFor(null); onEdit(product); }}>
                             <FaPencilAlt /> Editar
                           </button>
-                          <button
-                            type="button"
-                            className="menu-delete"
-                            onClick={() => {
-                              setMenuFor(null);
-                              onDelete(product.id);
-                            }}
-                          >
+                          <button type="button" className="menu-delete" onClick={() => { setMenuFor(null); onDelete(product.id); }}>
                             <FaTrash /> Eliminar
-                          </button>
-                          <button
-                            type="button"
-                            className="menu-view"
-                            onClick={() => {
-                              setMenuFor(null);
-                              setDetail(product);
-                            }}
-                          >
-                            <FaEye /> Ver detalles
                           </button>
                         </div>
                       )}
@@ -158,49 +94,6 @@ function ProductList({
         </tbody>
       </table>
     </div>
-    {detail && (
-        <Modal onClose={() => setDetail(null)}>
-          <div className="product-detail">
-            <h3>{detail.nombre}</h3>
-            <div className="product-detail-grid">
-              <div className="detail-field">
-                <span className="detail-label">Estado</span>
-                <span className={`estado-badge ${(ESTADO_BADGES[detail.estado] || ESTADO_BADGES.stock_bajo).cls}`}>
-                  {(ESTADO_BADGES[detail.estado] || ESTADO_BADGES.stock_bajo).label}
-                </span>
-              </div>
-              <div className="detail-field">
-                <span className="detail-label">Categoría</span>
-                <span className="cat-pill" style={{ background: getCategoryColor(detail.categoria).bg, color: getCategoryColor(detail.categoria).fg }}>
-                  {detail.categoria || "Sin categoría"}
-                </span>
-              </div>
-              <div className="detail-field">
-                <span className="detail-label">Cantidad actual</span>
-                <span className="detail-value">{detail.cantidad}</span>
-              </div>
-              <div className="detail-field">
-                <span className="detail-label">Stock mínimo</span>
-                <span className="detail-value">{detail.stock_minimo}</span>
-              </div>
-              <div className="detail-field">
-                <span className="detail-label">Precio</span>
-                <span className="detail-value">{formatMoney(detail.precio)}</span>
-              </div>
-              <div className="detail-field detail-field-wide">
-                <span className="detail-label">Fecha de creación</span>
-                <span className="detail-value">{formatFecha(detail.created_at)}</span>
-              </div>
-            </div>
-            <div className="form-actions">
-              <button type="button" className="btn-secondary" data-close-modal>
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </>
   );
 }
 

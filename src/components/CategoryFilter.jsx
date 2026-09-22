@@ -5,23 +5,17 @@ function CategoryFilter({ value, onChange }) {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    getCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   return (
-    <label className="category-filter">
-      Filtrar por categoría:
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-2">Filtrar por categoría</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-md border px-3 py-2">
         <option value="">Todas</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.nombre}
-          </option>
-        ))}
+        {categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
       </select>
-    </label>
+    </div>
   );
 }
 
